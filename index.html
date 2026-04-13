@@ -1114,6 +1114,33 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   自动追踪进度区域
+═══════════════════════════════════════ */
+.track-select {
+  background: var(--s2);
+  border: 1px solid var(--b3);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.track-select:focus { outline: 1px solid var(--gold); }
+.track-select option { background: var(--s2); }
+
+/* hist-item 内容纵向排列（含进度条时） */
+.hist-item { flex-wrap: wrap; }
+
+/* 自动判定徽章动效 */
+.auto-badge-win  { animation: fadeUp .4s ease; }
+.auto-badge-loss { animation: fadeUp .4s ease; }
+
+/* 进度光标脉冲 */
+@keyframes cursorPulse { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+.progress-cursor { animation: cursorPulse 2s infinite; }
+
+/* ═══════════════════════════════════════
    骨架屏动画
 ═══════════════════════════════════════ */
 @keyframes shimmer {
@@ -1356,19 +1383,39 @@ body {
 <script>
 'use strict';
 const STORAGE_KEY = 'bgsig_v5';
+const SETTINGS_KEY = 'bgsig_settings_v1';
 const REFRESH_SEC = 300;
 const MIN_SIGNALS_FOR_REPORT = 10;
+
+// ── 自动追踪时间窗口选项（小时）──
+const WINDOW_OPTIONS = [
+  { label: '4 小时',  val: 4  },
+  { label: '8 小时',  val: 8  },
+  { label: '12 小时', val: 12 },
+  { label: '24 小时（默认）', val: 24 },
+  { label: '48 小时', val: 48 },
+  { label: '72 小时', val: 72 },
+];
 const PROXY_FNS = [
   u => u,
   u => 'https://corsproxy.io/?' + encodeURIComponent(u),
   u => 'https://api.allorigins.win/get?url=' + encodeURIComponent(u),
 ];
 
+const defaultSettings = { checkWindowHours: 24 };
+let settings = { ...defaultSettings, ...safeParse(localStorage.getItem(SETTINGS_KEY), {}) };
+
 let state = {
   running:   false,
   countdown: REFRESH_SEC,
   history:   safeParse(localStorage.getItem(STORAGE_KEY), []),
+  lastBtcPrice: null,
+  lastEthPrice: null,
 };
+
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
 function safeParse(str, fb) {
   try { return JSON.parse(str) ?? fb; } catch { return fb; }
@@ -1839,6 +1886,13 @@ function saveHistory(ai, d, btcEnv, ethEnv) {
       entry:a.entry, tp1:a.tp1, tp2:a.tp2, sl:a.sl,
       risk:a.risk_score, outcome:'pending',
       time:now.toLocaleString('zh-CN',{hour12:false}),
+      openedAt: now.getTime(),
+      expiresAt: now.getTime() + settings.checkWindowHours * 3600 * 1000,
+      checkWindowHours: settings.checkWindowHours,
+      autoResolved: false,
+      autoReason: null,
+      highestPrice: d[sym].price,   // 记录开仓后最高价（用于回溯分析）
+      lowestPrice:  d[sym].price,   // 记录开仓后最低价
       fg:d.mkt.fg, funding:d[sym].funding, rsi1h:d[sym].rsi1h,
       fgZone:env?.fgZone, fundZone:env?.fundZone, rsiZone:env?.rsiZone,
     });
@@ -1847,58 +1901,224 @@ function saveHistory(ai, d, btcEnv, ethEnv) {
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state.history));
 }
 
-function renderHistory() {
-  const h=state.history;
-  const W=h.filter(s=>s.outcome==='win').length;
-  const L=h.filter(s=>s.outcome==='loss').length;
-  const P=h.filter(s=>s.outcome==='pending').length;
-  const T=W+L;
-  const wr=T>0?((W/T)*100).toFixed(1)+'%':'--%';
-  el('hTot').textContent=h.length;
-  el('hWR').textContent=wr;
-  el('hWR').style.color=T===0?'var(--dim)':parseFloat(wr)>=55?'var(--long)':parseFloat(wr)>=45?'var(--gold)':'var(--short)';
-  el('hW').textContent=W; el('hL').textContent=L; el('hP').textContent=P;
-  if(!h.length){
-    el('hList').innerHTML=`<div class="empty-state"><span class="big-num">0</span>暂无记录<br>等待第一次分析完成...</div>`;
-    return;
+/* ══════════════════════════════════════════════════
+   自动追踪引擎 — 核心
+   逻辑：
+     LONG  → 当前价 >= TP1 → WIN；当前价 <= SL → LOSS；超时 → EXPIRED
+     SHORT → 当前价 <= TP1 → WIN；当前价 >= SL → LOSS；超时 → EXPIRED
+   在每次 fullRefresh() 后调用，传入最新实时价格
+══════════════════════════════════════════════════ */
+function checkPendingSignals(btcPrice, ethPrice) {
+  if (!btcPrice && !ethPrice) return;
+  const now = Date.now();
+  let changed = false;
+
+  for (const sig of state.history) {
+    if (sig.outcome !== 'pending') continue;
+
+    const curPrice = sig.sym === 'BTC' ? btcPrice : ethPrice;
+    if (!curPrice) continue;
+
+    // 更新最高/最低价记录
+    if (curPrice > (sig.highestPrice ?? 0)) { sig.highestPrice = curPrice; changed = true; }
+    if (curPrice < (sig.lowestPrice ?? Infinity)) { sig.lowestPrice = curPrice; changed = true; }
+
+    const isLong  = sig.signal === 'LONG';
+    const isShort = sig.signal === 'SHORT';
+    const tp1Reached = isLong  ? curPrice >= sig.tp1 : curPrice <= sig.tp1;
+    const slHit      = isLong  ? curPrice <= sig.sl  : curPrice >= sig.sl;
+    const expired    = now > (sig.expiresAt ?? (sig.openedAt + 24*3600*1000));
+
+    if (tp1Reached) {
+      sig.outcome      = 'win';
+      sig.autoResolved = true;
+      sig.resolvedAt   = now;
+      sig.autoReason   = `价格 ${curPrice.toLocaleString()} 触及止盈1 ${sig.tp1.toLocaleString()}`;
+      changed = true;
+    } else if (slHit) {
+      sig.outcome      = 'loss';
+      sig.autoResolved = true;
+      sig.resolvedAt   = now;
+      sig.autoReason   = `价格 ${curPrice.toLocaleString()} 触及止损 ${sig.sl.toLocaleString()}`;
+      changed = true;
+    } else if (expired) {
+      sig.outcome      = 'loss';   // 到期未达目标，计为负（影响学习，保守策略）
+      sig.autoResolved = true;
+      sig.resolvedAt   = now;
+      sig.autoReason   = `持仓到期（${sig.checkWindowHours ?? 24}小时内未触及止盈1或止损）`;
+      changed = true;
+    }
   }
-  el('hList').innerHTML=h.map(s=>{
-    const symC=s.sym==='BTC'?'hist-sym-btc':'hist-sym-eth';
-    const envTags=[
-      s.fgZone?`<span class="env-tag ${s.fgZone.includes('fear')?'fear':'greed'}">${s.fgZone}</span>`:'',
-      s.fundZone==='high_long'?`<span class="env-tag high-fund">高资金费率</span>`:'',
-    ].filter(Boolean).join('');
-    return `
-    <div class="hist-item ${s.signal.toLowerCase()}">
-      <div class="hist-sig ${s.signal.toLowerCase()}">${s.signal}</div>
-      <div class="hist-meta">
-        <div class="hist-meta-top">
-          <span class="${symC}">${s.sym}</span>
-          <span>${fmtP(s.price,s.sym==='ETH')}</span>
-          <span style="color:var(--dim);font-size:11px;font-family:var(--mono)">${s.confidence}% 置信 · 风险 ${s.risk}</span>
-        </div>
-        <div class="hist-meta-sub">
-          <span>${s.time}</span>
-          <span>·</span><span>止盈1 ${fmtPct(s.entry,s.tp1)}</span>
-          <span>·</span><span>止盈2 ${fmtPct(s.entry,s.tp2)}</span>
-          <span>·</span><span>止损 ${fmtPct(s.entry,s.sl)}</span>
-        </div>
-        ${envTags?`<div class="hist-env-tags">${envTags}</div>`:''}
-      </div>
-      <div class="outcome-btns">
-        <button class="out-btn win${s.outcome==='win'?' sel':''}" onclick="setOutcome('${s.id}','win')">✓ 盈</button>
-        <button class="out-btn loss${s.outcome==='loss'?' sel':''}" onclick="setOutcome('${s.id}','loss')">✗ 亏</button>
-        ${s.outcome==='pending'?'<button class="out-btn pend">⏳</button>':''}
+
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
+    // 如果当前在历史面板，刷新UI
+    if (document.getElementById('tab-history')?.classList.contains('active')) {
+      renderHistory();
+    }
+  }
+}
+
+/* ─── 计算信号当前进度（用于进度条）─── */
+function calcSignalProgress(sig, curPrice) {
+  if (!curPrice || !sig.entry || !sig.tp1 || !sig.sl) return null;
+  const isLong = sig.signal === 'LONG';
+  // 把整个区间 [SL ... Entry ... TP1] 映射到 [0 ... 100]
+  const rangeTotal = Math.abs(sig.tp1 - sig.sl);
+  if (rangeTotal === 0) return null;
+  let progress;
+  if (isLong) {
+    progress = ((curPrice - sig.sl) / rangeTotal) * 100;
+  } else {
+    progress = ((sig.sl - curPrice) / rangeTotal) * 100;
+  }
+  return Math.max(0, Math.min(100, progress));
+}
+
+/* ─── 剩余时间格式化 ─── */
+function fmtRemaining(expiresAt) {
+  if (!expiresAt) return '--';
+  const ms = expiresAt - Date.now();
+  if (ms <= 0) return '已到期';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h >= 1) return `剩余 ${h}h ${m}m`;
+  return `剩余 ${m}m`;
+}
+
+function renderHistory() {
+  const h = state.history;
+  // 统计时把「到期未达成」也算进已决算
+  const W = h.filter(s=>s.outcome==='win').length;
+  const L = h.filter(s=>s.outcome==='loss').length;
+  const P = h.filter(s=>s.outcome==='pending').length;
+  const T = W + L;
+  const wr = T>0 ? ((W/T)*100).toFixed(1)+'%' : '--%';
+
+  el('hTot').textContent = h.length;
+  el('hWR').textContent  = wr;
+  el('hWR').style.color  = T===0?'var(--dim)':parseFloat(wr)>=55?'var(--long)':parseFloat(wr)>=45?'var(--gold)':'var(--short)';
+  el('hW').textContent=W; el('hL').textContent=L; el('hP').textContent=P;
+
+  // ── 时间窗口设置控件 ──
+  const windowHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--radius-sm);flex-wrap:wrap;">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px;white-space:nowrap;">⏱ 判定时间窗口</div>
+      <select onchange="changeWindow(this.value)" style="background:var(--s2);border:1px solid var(--b3);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 10px;cursor:pointer;flex:1;min-width:140px;">
+        ${WINDOW_OPTIONS.map(o=>`<option value="${o.val}" ${settings.checkWindowHours===o.val?'selected':''}>${o.label}</option>`).join('')}
+      </select>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5;flex:2;min-width:200px;">
+        开仓后 <span style="color:var(--gold)">${settings.checkWindowHours}h</span> 内触及止盈1 → 胜；触及止损 → 负；到期未达 → 负
       </div>
     </div>`;
+
+  if(!h.length) {
+    el('hList').innerHTML = windowHtml + `<div class="empty-state"><span class="big-num">0</span>暂无记录<br>等待第一次分析完成...</div>`;
+    return;
+  }
+
+  const itemsHtml = h.map(s => {
+    const symC   = s.sym==='BTC' ? 'hist-sym-btc' : 'hist-sym-eth';
+    const curPrice = s.sym==='BTC' ? state.lastBtcPrice : state.lastEthPrice;
+    const progress = s.outcome==='pending' ? calcSignalProgress(s, curPrice) : null;
+    const remaining = s.outcome==='pending' ? fmtRemaining(s.expiresAt) : null;
+
+    // 判断进度条颜色和位置
+    let progressBar = '';
+    if (progress !== null) {
+      const isLong    = s.signal==='LONG';
+      // 进度 50% = 在入场价，>50% 向好方向，<50% 向坏方向
+      const fillColor = progress >= 60 ? 'var(--long)' : progress <= 40 ? 'var(--short)' : 'var(--gold)';
+      const distToTp  = ((Math.abs(s.tp1 - (curPrice??s.entry)) / Math.abs(s.tp1 - s.sl)) * 100).toFixed(1);
+      const distToSl  = ((Math.abs((curPrice??s.entry) - s.sl)    / Math.abs(s.tp1 - s.sl)) * 100).toFixed(1);
+      progressBar = `
+        <div style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:4px;">
+            <span style="color:var(--short)">SL ${fmtP(s.sl,s.sym==='ETH')}</span>
+            <span style="color:var(--dim)">现价 ${curPrice?fmtP(curPrice,s.sym==='ETH'):'--'}</span>
+            <span style="color:var(--long)">TP1 ${fmtP(s.tp1,s.sym==='ETH')}</span>
+          </div>
+          <div style="height:6px;background:var(--b2);border-radius:3px;overflow:hidden;position:relative;">
+            <div style="position:absolute;left:${progress.toFixed(1)}%;top:0;bottom:0;width:3px;background:white;transform:translateX(-50%);border-radius:2px;box-shadow:0 0 6px rgba(255,255,255,.6);"></div>
+            <div style="height:100%;width:${progress.toFixed(1)}%;background:linear-gradient(90deg,var(--short),${fillColor});border-radius:3px;transition:width .8s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px;">
+            <span>距止损 ${distToSl}%</span>
+            <span style="color:${remaining==='已到期'?'var(--short)':'var(--gold)'}">⏱ ${remaining}</span>
+            <span>距止盈 ${distToTp}%</span>
+          </div>
+        </div>`;
+    }
+
+    // 自动判定说明
+    const autoTag = s.autoResolved
+      ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;background:${s.outcome==='win'?'rgba(14,203,129,.1)':'rgba(246,70,93,.1)'};color:${s.outcome==='win'?'var(--long)':'var(--short)'};border:1px solid ${s.outcome==='win'?'rgba(14,203,129,.25)':'rgba(246,70,93,.25)'};white-space:nowrap;">🤖 自动判定</span>`
+      : '';
+    const autoReason = s.autoReason
+      ? `<div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px;">📌 ${s.autoReason}</div>`
+      : '';
+
+    const envTags = [
+      s.fgZone ? `<span class="env-tag ${s.fgZone.includes('fear')?'fear':'greed'}">${s.fgZone}</span>` : '',
+      s.fundZone==='high_long' ? `<span class="env-tag high-fund">高资金费率</span>` : '',
+    ].filter(Boolean).join('');
+
+    // 手动按钮（只在 pending 且未自动判定时显示；已自动判定允许手动覆盖）
+    const outcomeRow = `
+      <div class="outcome-btns" style="align-items:flex-start;flex-direction:column;gap:5px;">
+        <div style="display:flex;gap:5px;">
+          <button class="out-btn win${s.outcome==='win'?' sel':''}" onclick="setOutcome('${s.id}','win')">✓ 盈</button>
+          <button class="out-btn loss${s.outcome==='loss'?' sel':''}" onclick="setOutcome('${s.id}','loss')">✗ 亏</button>
+        </div>
+        ${autoTag}
+      </div>`;
+
+    return `
+    <div class="hist-item ${s.signal.toLowerCase()}" style="flex-direction:column;gap:10px;align-items:stretch;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div class="hist-sig ${s.signal.toLowerCase()}">${s.signal}</div>
+        <div class="hist-meta" style="flex:1;">
+          <div class="hist-meta-top">
+            <span class="${symC}">${s.sym}</span>
+            <span>${fmtP(s.price,s.sym==='ETH')}</span>
+            <span style="color:var(--dim);font-size:11px;font-family:var(--mono)">${s.confidence}% 置信 · 风险 ${s.risk}</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--dim);">⏱${s.checkWindowHours??24}h 窗口</span>
+          </div>
+          <div class="hist-meta-sub">
+            <span>${s.time}</span>
+            <span>·</span><span>止盈1 ${fmtPct(s.entry,s.tp1)}</span>
+            <span>·</span><span>止盈2 ${fmtPct(s.entry,s.tp2)}</span>
+            <span>·</span><span>止损 ${fmtPct(s.entry,s.sl)}</span>
+          </div>
+          ${envTags?`<div class="hist-env-tags">${envTags}</div>`:''}
+          ${autoReason}
+        </div>
+        ${outcomeRow}
+      </div>
+      ${progressBar}
+    </div>`;
   }).join('');
-  const verified=h.filter(s=>s.outcome!=='pending').length;
+
+  el('hList').innerHTML = windowHtml + itemsHtml;
+  const verified = h.filter(s=>s.outcome!=='pending').length;
   if(verified>0){el('learnBadge').style.display='flex';el('learnTxt').textContent=`已学习 ${verified} 条`;}
 }
 
+function changeWindow(val) {
+  settings.checkWindowHours = parseInt(val);
+  saveSettings();
+  renderHistory();
+}
+
 function setOutcome(id, outcome) {
-  const idx=state.history.findIndex(s=>s.id===id);
-  if(idx!==-1){state.history[idx].outcome=outcome;localStorage.setItem(STORAGE_KEY,JSON.stringify(state.history));renderHistory();}
+  const idx = state.history.findIndex(s=>s.id===id);
+  if(idx !== -1) {
+    state.history[idx].outcome = outcome;
+    state.history[idx].autoResolved = false;   // 手动覆盖
+    state.history[idx].autoReason   = '手动标记';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
+    renderHistory();
+  }
 }
 function clearH() {
   if(!confirm('确定清空所有信号记录？学习数据也将一并清除。')) return;
@@ -2010,6 +2230,11 @@ async function fullRefresh() {
   el('rBtn').disabled=true; el('nxt').textContent='刷新中...'; setProgress(0);
   try {
     const data=await fetchAll(); setProgress(50);
+    // 保存最新价格供进度条使用
+    state.lastBtcPrice = data.btc.price;
+    state.lastEthPrice = data.eth.price;
+    // 自动检查所有待定信号
+    checkPendingSignals(data.btc.price, data.eth.price);
     updMBar(data); updPrices(data); updTables(data); setProgress(60);
     const aiRes=await runAI(data); setProgress(92);
     if(aiRes){
