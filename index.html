@@ -464,21 +464,18 @@ body {
 }
 .score-body { margin-top: 10px; }
 .score-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 0; border-bottom: 1px solid var(--b1); font-family: var(--mono); font-size: 10px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 0; border-bottom: 1px solid var(--b1); font-family: var(--mono); font-size: 10px;
 }
 .score-row:last-child { border-bottom: none; }
-.score-ind { flex: 1; color: var(--text2); }
-.score-val { min-width: 80px; text-align: right; color: var(--dim); }
+.score-ind { color: var(--text2); white-space: nowrap; }
+.score-val { color: var(--dim); white-space: nowrap; font-size: 9px; }
 .score-pts {
-  min-width: 44px; text-align: right; font-weight: 600;
-  font-size: 11px;
+  font-weight: 600; font-size: 11px; white-space: nowrap;
 }
 .score-pts.pos { color: var(--long); }
 .score-pts.neg { color: var(--short); }
 .score-pts.zer { color: var(--dim); }
-.score-bar-wrap { width: 60px; position: relative; height: 4px; background: var(--b2); border-radius: 2px; overflow: visible; flex-shrink: 0; }
-.score-bar-fill { position: absolute; top: 0; height: 100%; border-radius: 2px; }
 .score-divider { height: 1px; background: var(--b2); margin: 8px 0; }
 .score-map {
   display: flex; gap: 0; margin-top: 10px; border-radius: 6px; overflow: hidden;
@@ -542,6 +539,49 @@ body {
 .export-btn:hover { background: rgba(3,105,161,.08); border-color: rgba(3,105,161,.5); }
 .import-btn { padding: 6px 14px; background: transparent; border: 1px solid rgba(109,40,217,.3); border-radius: var(--radius-sm); color: var(--purple); font-family: var(--mono); font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: all .2s; }
 .import-btn:hover { background: rgba(109,40,217,.08); border-color: rgba(109,40,217,.5); }
+/* ─────────── 宏观动态/新闻面板 ─────────── */
+.news-card { background:var(--s1); border:1px solid var(--b2); border-radius:var(--radius); padding:14px 16px; margin-bottom:8px; transition:border-color .2s,box-shadow .2s; }
+.news-card:hover { border-color:var(--b3); box-shadow:var(--shadow-card); }
+.news-card-title { font-size:13px; font-weight:500; color:var(--text); margin-bottom:5px; line-height:1.5; }
+.news-card-title a { color:inherit; text-decoration:none; }
+.news-card-title a:hover { color:var(--gold); }
+.news-meta { font-family:var(--mono); font-size:10px; color:var(--dim); display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:4px; }
+.news-tag { padding:2px 7px; border-radius:3px; font-size:9px; letter-spacing:0.5px; }
+.news-tag.crypto { color:var(--gold); background:rgba(200,130,10,.1); border:1px solid rgba(200,130,10,.2); }
+.news-tag.macro  { color:var(--blue); background:rgba(3,105,161,.1); border:1px solid rgba(3,105,161,.2); }
+.news-section-hdr { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--gold); margin:18px 0 10px; display:flex; align-items:center; }
+.news-section-hdr::before { content:'//'; margin-right:8px; opacity:0.5; }
+.news-empty { text-align:center; padding:30px; font-family:var(--mono); font-size:11px; color:var(--dim); line-height:2; }
+.news-actions { display:flex; gap:8px; margin-bottom:14px; align-items:center; flex-wrap:wrap; }
+.news-action-btn { padding:5px 12px; background:transparent; border:1px solid var(--b2); border-radius:var(--radius-sm); color:var(--dim); font-family:var(--mono); font-size:10px; cursor:pointer; letter-spacing:1px; transition:all .2s; }
+.news-action-btn:hover { border-color:var(--gold); color:var(--gold); }
+.news-action-btn:disabled { opacity:.4; cursor:not-allowed; }
+.news-source-note { font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:16px;line-height:1.8;padding:10px 14px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--radius-sm); }
+/* ─────────── 新闻影响面板 (signals tab) ─────────── */
+.ni-card { background:var(--s1); border:1px solid var(--b2); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; }
+.ni-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.ni-title { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--gold); }
+.ni-title::before { content:'//'; margin-right:8px; opacity:.5; }
+.ni-ts { font-family:var(--mono); font-size:9px; color:var(--dim); }
+.ni-verdict { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.ni-badge { padding:4px 12px; border-radius:4px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:1px; border:1px solid; }
+.ni-badge.bullish  { color:#16a34a; background:rgba(22,163,74,.1);  border-color:rgba(22,163,74,.3); }
+.ni-badge.sl-bull  { color:var(--gold); background:rgba(200,130,10,.1); border-color:rgba(200,130,10,.3); }
+.ni-badge.neutral  { color:var(--dim);  background:var(--s2); border-color:var(--b2); }
+.ni-badge.sl-bear  { color:#f97316; background:rgba(249,115,22,.1); border-color:rgba(249,115,22,.3); }
+.ni-badge.bearish  { color:var(--red);  background:rgba(246,70,93,.1);  border-color:rgba(246,70,93,.3); }
+.ni-score-bar { flex:1; height:6px; background:var(--b1); border-radius:3px; overflow:hidden; position:relative; }
+.ni-score-fill { height:100%; border-radius:3px; transition:width .6s ease, background-color .4s; position:absolute; top:0; }
+.ni-score-fill.pos { left:50%; background:linear-gradient(90deg,var(--gold),#16a34a); }
+.ni-score-fill.neg { right:50%; background:linear-gradient(270deg,var(--gold),var(--red)); }
+.ni-center-mark { position:absolute; top:0; left:50%; width:1px; height:100%; background:var(--b3); }
+.ni-score-label { font-family:var(--mono); font-size:9px; color:var(--dim); white-space:nowrap; }
+.ni-keywords { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.ni-kw { padding:2px 8px; border-radius:3px; font-family:var(--mono); font-size:9px; }
+.ni-kw.bull { color:#16a34a; background:rgba(22,163,74,.1); border:1px solid rgba(22,163,74,.2); }
+.ni-kw.bear { color:var(--red); background:rgba(246,70,93,.1); border:1px solid rgba(246,70,93,.2); }
+.ni-note { font-family:var(--mono); font-size:9px; color:var(--dim); line-height:1.7; padding-top:8px; border-top:1px solid var(--b1); }
+.ni-no-data { font-family:var(--mono); font-size:10px; color:var(--dim); text-align:center; padding:8px 0; }
 </style>
 </head>
 <body>
@@ -581,6 +621,7 @@ body {
     <div class="tab"           data-tab="data"    onclick="sw('data')">📊 市场数据</div>
     <div class="tab"           data-tab="history" onclick="sw('history')">📋 信号追踪</div>
     <div class="tab learn-tab" data-tab="learn"   onclick="sw('learn')">🧠 学习报告</div>
+    <div class="tab"           data-tab="news"    onclick="sw('news')">🌐 宏观动态</div>
   </nav>
 
   <!-- Panel 1 -->
@@ -710,6 +751,17 @@ body {
       <div class="full-card-title">综合市场分析</div>
       <div id="fTxt"></div>
     </div>
+    <!-- 新闻面板影响 widget -->
+    <div class="ni-card" id="newsImpactWidget">
+      <div class="ni-header">
+        <span class="ni-title">新闻面板影响</span>
+        <span class="ni-ts" id="niTs">—— 请先加载宏观动态 ——</span>
+      </div>
+      <div id="niBody">
+        <div class="ni-no-data">切换到「🌐 宏观动态」Tab 加载新闻后，此处将显示新闻对当前信号方向的影响评估。</div>
+      </div>
+    </div>
+
     <div class="disclaimer">
       <span class="disclaimer-icon">⚠</span>
       <span>风险提示：本工具为辅助参考性资讯，不构成投资建议。合约交易存在爆仓风险，请严格控制仓位，自行判断入场时机。</span>
@@ -769,6 +821,18 @@ body {
   <!-- Panel 4 -->
   <div class="panel" id="tab-learn">
     <div id="learnContent"></div>
+  </div>
+
+  <!-- Panel 5: 宏观动态 -->
+  <div class="panel" id="tab-news">
+    <div class="news-actions">
+      <button class="news-action-btn" id="newsRefreshBtn" onclick="loadNews(true)">⟳ 刷新新闻</button>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">via GDELT · 全球事件数据库</span>
+      <span id="newsTs" style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:auto"></span>
+    </div>
+    <div id="newsContent">
+      <div class="news-empty">⏳ 切换到此面板自动加载...</div>
+    </div>
   </div>
 </div>
 
@@ -878,7 +942,9 @@ function initDOM() {
     'bTb','eTb',
     'hTot','hWR','hW','hL','hP','hList','learnProgressWrap','lpFill','lpCount',
     'learnContent','importInput',
-    'tab-signals','tab-data','tab-history','tab-learn',
+    'newsContent','newsTs','newsRefreshBtn',
+    'newsImpactWidget','niBody','niTs',
+    'tab-signals','tab-data','tab-history','tab-learn','tab-news',
   ];
   ids.forEach(id => { DOM[id] = document.getElementById(id); });
 }
@@ -960,8 +1026,18 @@ setInterval(async () => {
       jFetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT'),
     ]);
     const bp = okxPrice(btcTk), ep = okxPrice(ethTk);
+    const bc = okxChg24(btcTk), ec = okxChg24(ethTk);
     if (bp) state.lastBtcPrice = bp;
     if (ep) state.lastEthPrice = ep;
+    // 同步更新界面价格显示（不触发全量刷新）
+    if (bp && DOM['bP']) {
+      DOM['bP'].textContent = fmtP(bp, false);
+      DOM['bP'].className   = 'cc-price' + (bc == null ? '' : bc >= 0 ? ' up' : ' dn');
+    }
+    if (ep && DOM['eP']) {
+      DOM['eP'].textContent = fmtP(ep, true);
+      DOM['eP'].className   = 'cc-price' + (ec == null ? '' : ec >= 0 ? ' up' : ' dn');
+    }
     checkPendingSignals(bp, ep);
   } catch(e) { /* 静默失败，不影响主循环 */ }
 }, 30000);
@@ -990,11 +1066,12 @@ function sw(name) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === name);
   });
-  ['signals','data','history','learn'].forEach(n => {
+  ['signals','data','history','learn','news'].forEach(n => {
     DOM['tab-' + n].classList.toggle('active', n === name);
   });
   if (name === 'history') renderHistory();
   if (name === 'learn')   renderLearnPanel();
+  if (name === 'news' && !_newsLoaded) loadNews();
 }
 
 /* ─────────── 学习引擎 ─────────── */
@@ -1174,31 +1251,41 @@ function analyzeSignal(sym, coin, mkt, env) {
   const indicators  = [];
   const scoreRows   = [];   // 评分明细
 
-  const addInd = (label, val, sig, pts) => {
+  // range: { pos: 最大正分, neg: 最大负分(负数) }
+  const addInd = (label, val, sig, pts, range) => {
     score += pts;
     indicators.push({ label, val, sig });
-    scoreRows.push({ label, val, pts, sig });
+    scoreRows.push({ label, val, pts, sig, range });
   };
-  const addAdj = (label, pts, reason) => {
+  const addAdj = (label, pts, reason, range) => {
     score += pts;
-    scoreRows.push({ label, val: reason, pts, sig: pts>0?'bull':pts<0?'bear':'neut', isAdj: true });
+    scoreRows.push({ label, val: reason, pts, sig: pts>0?'bull':pts<0?'bear':'neut', isAdj: true, range });
   };
+
+  const R_RSI1H  = { pos:2.5,  neg:-2.5 };
+  const R_RSI15M = { pos:1.5,  neg:-1.5 };
+  const R_MACD1H = { pos:1.5,  neg:-1.5 };
+  const R_MACD15 = { pos:0.8,  neg:-0.8 };
+  const R_VOL    = { pos:0.8,  neg:-0.5 };
+  const R_FUND   = { pos:1.0,  neg:-2.0 };
+  const R_FG     = { pos:1.5,  neg:-1.0 };
+  const R_CHG    = { pos:0.5,  neg:-0.5 };
 
   // RSI 1H
-  if      (rsi1h < T.RSI_EXTREME_OS) addInd('RSI 1H', nv(rsi1h), 'bull',  2.5);
-  else if (rsi1h < T.RSI_OS)         addInd('RSI 1H', nv(rsi1h), 'bull',  1.5);
-  else if (rsi1h > T.RSI_EXTREME_OB) addInd('RSI 1H', nv(rsi1h), 'bear', -2.5);
-  else if (rsi1h > T.RSI_OB)         addInd('RSI 1H', nv(rsi1h), 'bear', -1.5);
-  else if (rsi1h > T.RSI_BULL_MILD)  addInd('RSI 1H', nv(rsi1h), 'bull',  0.5);
-  else if (rsi1h < T.RSI_BEAR_MILD)  addInd('RSI 1H', nv(rsi1h), 'bear', -0.5);
-  else                                addInd('RSI 1H', nv(rsi1h), 'neut',  0);
+  if      (rsi1h < T.RSI_EXTREME_OS) addInd('RSI 1H', nv(rsi1h), 'bull',  2.5, R_RSI1H);
+  else if (rsi1h < T.RSI_OS)         addInd('RSI 1H', nv(rsi1h), 'bull',  1.5, R_RSI1H);
+  else if (rsi1h > T.RSI_EXTREME_OB) addInd('RSI 1H', nv(rsi1h), 'bear', -2.5, R_RSI1H);
+  else if (rsi1h > T.RSI_OB)         addInd('RSI 1H', nv(rsi1h), 'bear', -1.5, R_RSI1H);
+  else if (rsi1h > T.RSI_BULL_MILD)  addInd('RSI 1H', nv(rsi1h), 'bull',  0.5, R_RSI1H);
+  else if (rsi1h < T.RSI_BEAR_MILD)  addInd('RSI 1H', nv(rsi1h), 'bear', -0.5, R_RSI1H);
+  else                                addInd('RSI 1H', nv(rsi1h), 'neut',  0,   R_RSI1H);
 
   // RSI 15M
-  if      (rsi4h < T.RSI4_OS)   addInd('RSI 15M', nv(rsi4h), 'bull',  1.5);
-  else if (rsi4h > T.RSI4_OB)   addInd('RSI 15M', nv(rsi4h), 'bear', -1.5);
-  else if (rsi4h > T.RSI4_BULL) addInd('RSI 15M', nv(rsi4h), 'bull',  0.3);
-  else if (rsi4h < T.RSI4_BEAR) addInd('RSI 15M', nv(rsi4h), 'bear', -0.3);
-  else                           addInd('RSI 15M', nv(rsi4h), 'neut',  0);
+  if      (rsi4h < T.RSI4_OS)   addInd('RSI 15M', nv(rsi4h), 'bull',  1.5, R_RSI15M);
+  else if (rsi4h > T.RSI4_OB)   addInd('RSI 15M', nv(rsi4h), 'bear', -1.5, R_RSI15M);
+  else if (rsi4h > T.RSI4_BULL) addInd('RSI 15M', nv(rsi4h), 'bull',  0.3, R_RSI15M);
+  else if (rsi4h < T.RSI4_BEAR) addInd('RSI 15M', nv(rsi4h), 'bear', -0.3, R_RSI15M);
+  else                           addInd('RSI 15M', nv(rsi4h), 'neut',  0,   R_RSI15M);
 
   // MACD 1H — prefer crossover signal when available
   if (mf1h) {
@@ -1206,11 +1293,11 @@ function analyzeSignal(sym, coin, mkt, env) {
     const label = cross==='golden' ? 'MACD 1H ↗' : cross==='death' ? 'MACD 1H ↘' : 'MACD 1H';
     const pts   = cross==='golden' ? 1.5 : cross==='death' ? -1.5 : mf1h.macd>0 ? 0.8 : mf1h.macd<0 ? -0.8 : 0;
     const sig   = cross==='golden'||mf1h.macd>0 ? 'bull' : cross==='death'||mf1h.macd<0 ? 'bear' : 'neut';
-    addInd(label, nv(mf1h.macd,1), sig, pts);
+    addInd(label, nv(mf1h.macd,1), sig, pts, R_MACD1H);
   } else {
-    if      (macd1h > 0) addInd('MACD 1H', nv(macd1h, 1), 'bull',  1);
-    else if (macd1h < 0) addInd('MACD 1H', nv(macd1h, 1), 'bear', -1);
-    else                 addInd('MACD 1H', '0',            'neut',  0);
+    if      (macd1h > 0) addInd('MACD 1H', nv(macd1h, 1), 'bull',  1,  R_MACD1H);
+    else if (macd1h < 0) addInd('MACD 1H', nv(macd1h, 1), 'bear', -1,  R_MACD1H);
+    else                 addInd('MACD 1H', '0',            'neut',  0,  R_MACD1H);
   }
 
   // MACD 15M
@@ -1219,36 +1306,36 @@ function analyzeSignal(sym, coin, mkt, env) {
     const label = cross==='golden' ? 'MACD 15M ↗' : cross==='death' ? 'MACD 15M ↘' : 'MACD 15M';
     const pts   = cross==='golden' ? 0.8 : cross==='death' ? -0.8 : mf15m.macd>0 ? 0.4 : mf15m.macd<0 ? -0.4 : 0;
     const sig   = cross==='golden'||mf15m.macd>0 ? 'bull' : cross==='death'||mf15m.macd<0 ? 'bear' : 'neut';
-    addInd(label, nv(mf15m.macd,1), sig, pts);
+    addInd(label, nv(mf15m.macd,1), sig, pts, R_MACD15);
   } else {
-    if      (macd4h > 0) addInd('MACD 15M', nv(macd4h, 1), 'bull',  0.5);
-    else if (macd4h < 0) addInd('MACD 15M', nv(macd4h, 1), 'bear', -0.5);
-    else                 addInd('MACD 15M', '0',            'neut',  0);
+    if      (macd4h > 0) addInd('MACD 15M', nv(macd4h, 1), 'bull',  0.5, R_MACD15);
+    else if (macd4h < 0) addInd('MACD 15M', nv(macd4h, 1), 'bear', -0.5, R_MACD15);
+    else                 addInd('MACD 15M', '0',            'neut',  0,   R_MACD15);
   }
 
   // 成交量
-  if      (volRatio > T.VOL_HIGH) addInd('成交量', nv(volRatio,1)+'x', 'bull',  0.8);
-  else if (volRatio > T.VOL_MID)  addInd('成交量', nv(volRatio,1)+'x', 'bull',  0.4);
-  else if (volRatio < T.VOL_LOW)  addInd('成交量', nv(volRatio,1)+'x', 'bear', -0.5);
-  else                            addInd('成交量', nv(volRatio,1)+'x', 'neut',  0);
+  if      (volRatio > T.VOL_HIGH) addInd('成交量', nv(volRatio,1)+'x', 'bull',  0.8, R_VOL);
+  else if (volRatio > T.VOL_MID)  addInd('成交量', nv(volRatio,1)+'x', 'bull',  0.4, R_VOL);
+  else if (volRatio < T.VOL_LOW)  addInd('成交量', nv(volRatio,1)+'x', 'bear', -0.5, R_VOL);
+  else                            addInd('成交量', nv(volRatio,1)+'x', 'neut',  0,   R_VOL);
 
   // 资金费率
-  if      (funding > T.FUND_HIGH_LONG) addInd('资金费率', nv(funding,4)+'%', 'bear', -2);
-  else if (funding > T.FUND_MID_LONG)  addInd('资金费率', nv(funding,4)+'%', 'bear', -1);
-  else if (funding < T.FUND_SHORT)     addInd('资金费率', nv(funding,4)+'%', 'bull',  1);
-  else                                 addInd('资金费率', nv(funding,4)+'%', 'neut',  0);
+  if      (funding > T.FUND_HIGH_LONG) addInd('资金费率', nv(funding,4)+'%', 'bear', -2,  R_FUND);
+  else if (funding > T.FUND_MID_LONG)  addInd('资金费率', nv(funding,4)+'%', 'bear', -1,  R_FUND);
+  else if (funding < T.FUND_SHORT)     addInd('资金费率', nv(funding,4)+'%', 'bull',  1,  R_FUND);
+  else                                 addInd('资金费率', nv(funding,4)+'%', 'neut',  0,  R_FUND);
 
   // 情绪修正
-  if      (fg < T.FG_EXT_FEAR)  addAdj('情绪修正', +1.5, `FG ${fg} 极度恐慌`);
-  else if (fg < T.FG_FEAR)      addAdj('情绪修正', +0.5, `FG ${fg} 恐慌`);
-  else if (fg > T.FG_EXT_GREED) addAdj('情绪修正', -1.0, `FG ${fg} 极度贪婪`);
-  else if (fg > T.FG_GREED)     addAdj('情绪修正', -0.3, `FG ${fg} 贪婪`);
-  else                           addAdj('情绪修正',  0,   `FG ${fg} 中性`);
+  if      (fg < T.FG_EXT_FEAR)  addAdj('情绪修正', +1.5, `FG ${fg} 极度恐慌`, R_FG);
+  else if (fg < T.FG_FEAR)      addAdj('情绪修正', +0.5, `FG ${fg} 恐慌`,     R_FG);
+  else if (fg > T.FG_EXT_GREED) addAdj('情绪修正', -1.0, `FG ${fg} 极度贪婪`, R_FG);
+  else if (fg > T.FG_GREED)     addAdj('情绪修正', -0.3, `FG ${fg} 贪婪`,     R_FG);
+  else                           addAdj('情绪修正',  0,   `FG ${fg} 中性`,     R_FG);
 
   // 24H 涨跌
-  if      (chg24 >  5) addAdj('24H涨跌', +0.5, `+${chg24.toFixed(2)}%`);
-  else if (chg24 < -5) addAdj('24H涨跌', -0.5, `${chg24.toFixed(2)}%`);
-  else                 addAdj('24H涨跌',   0,  `${chg24>=0?'+':''}${chg24.toFixed(2)}%`);
+  if      (chg24 >  5) addAdj('24H涨跌', +0.5, `+${chg24.toFixed(2)}%`, R_CHG);
+  else if (chg24 < -5) addAdj('24H涨跌', -0.5, `${chg24.toFixed(2)}%`,  R_CHG);
+  else                 addAdj('24H涨跌',   0,  `${chg24>=0?'+':''}${chg24.toFixed(2)}%`, R_CHG);
 
   // 方向判定
   let signal, baseConf, baseRisk;
@@ -1258,27 +1345,41 @@ function analyzeSignal(sym, coin, mkt, env) {
   else if (score <= -T.SCORE_WEAK)   { signal='SHORT';   baseConf=63; baseRisk=42; }
   else                                { signal='NEUTRAL'; baseConf=45; baseRisk=65; }
 
+  // 置信度明细追踪
+  const confRows = [];
+  const scoreLabel = score >= T.SCORE_STRONG ? `得分≥+${T.SCORE_STRONG} 强信号`
+                   : score >= T.SCORE_WEAK   ? `得分≥+${T.SCORE_WEAK} 弱信号`
+                   : score <= -T.SCORE_STRONG? `得分≤-${T.SCORE_STRONG} 强信号`
+                   : score <= -T.SCORE_WEAK  ? `得分≤-${T.SCORE_WEAK} 弱信号`
+                   : '得分在中性区间';
+  confRows.push({ label:'基础置信度', reason: scoreLabel, delta: baseConf, isBase: true });
+
   // 反向惩罚
-  if (rsi1h > 72 && signal === 'LONG')   { baseConf -= 12; baseRisk += 12; }
-  if (rsi1h < 28 && signal === 'SHORT')  { baseConf -= 12; baseRisk += 12; }
-  if (funding > 0.05 && signal === 'LONG')  { baseConf -= 15; baseRisk += 15; }
-  if (funding < -0.01 && signal === 'SHORT'){ baseConf -= 8;  baseRisk += 8;  }
+  if (rsi1h > 72 && signal === 'LONG')      { baseConf -= 12; baseRisk += 12; confRows.push({ label:'RSI 超买惩罚',    reason:`RSI 1H ${nv(rsi1h)} > 72，做多风险高`, delta:-12 }); }
+  if (rsi1h < 28 && signal === 'SHORT')     { baseConf -= 12; baseRisk += 12; confRows.push({ label:'RSI 超卖惩罚',    reason:`RSI 1H ${nv(rsi1h)} < 28，做空风险高`, delta:-12 }); }
+  if (funding > 0.05 && signal === 'LONG')  { baseConf -= 15; baseRisk += 15; confRows.push({ label:'资金费率惩罚',   reason:`费率 ${nv(funding,4)}% 过高，多头拥挤`, delta:-15 }); }
+  if (funding < -0.01 && signal === 'SHORT'){ baseConf -= 8;  baseRisk += 8;  confRows.push({ label:'负费率惩罚',     reason:`费率 ${nv(funding,4)}%，空头拥挤`,     delta: -8 }); }
 
   // 注入学习调整
   if (env) {
     const adj = buildLearningAdjustment(sym, env);
-    baseConf += adj.confAdj;
-    baseRisk += adj.riskAdj;
+    if (adj.confAdj !== 0) {
+      baseConf += adj.confAdj;
+      baseRisk += adj.riskAdj;
+      confRows.push({ label:'学习引擎修正', reason: adj.notes.slice(0,2).join(' | ') || '历史数据调整', delta: adj.confAdj });
+    }
     // [FIX] 极低胜率环境抑制方向信号
     if (adj.suppress && signal !== 'NEUTRAL') {
       signal   = 'NEUTRAL';
       baseConf = Math.min(baseConf, 45);
       baseRisk = Math.max(baseRisk, 65);
+      confRows.push({ label:'学习引擎抑制', reason:'≥2个维度胜率极低，强制观望', delta: null, isSuppressed: true });
     }
   }
 
   const confidence  = Math.round(Math.max(30, Math.min(92, baseConf)));
   const risk_score  = Math.round(Math.max(10, Math.min(95, baseRisk)));
+  confRows.push({ label:'最终置信度', reason:`钳位范围 30~92%`, delta: confidence, isFinal: true });
 
   // [FIX] 波动率自适应 TP/SL（基于 24H 涨跌幅动态调整比例）
   const price = coin.price || 0;
@@ -1307,7 +1408,7 @@ function analyzeSignal(sym, coin, mkt, env) {
     : (macd1h>0?'看涨':'看跌');
   const analysis = `综合评分 ${score>=0?'+':''}${score.toFixed(1)} → ${sigTxt}信号。RSI(1H) ${nv(rsi1h)} 处于${rsiTxt}，MACD ${macdDesc}，成交量 ${nv(volRatio,1)}倍均值，资金费率 ${nv(funding,4)}%。市场情绪 ${fg}（${fgTxt}），置信度 ${confidence}%，风险评分 ${risk_score}/100。`;
 
-  return { signal, confidence, entry, tp1, tp2, sl, risk_score, analysis, indicators, scoreRows, totalScore: score };
+  return { signal, confidence, entry, tp1, tp2, sl, risk_score, analysis, indicators, scoreRows, totalScore: score, confRows };
 }
 
 async function runAI(d) {
@@ -1986,25 +2087,41 @@ function renderScorePanel(pfx, ai) {
   totalEl.textContent = `合计 ${total>=0?'+':''}${total.toFixed(1)}`;
   totalEl.style.color = total > 1.5 ? 'var(--long)' : total < -1.5 ? 'var(--short)' : 'var(--gold)';
 
-  // build rows
-  const MAX_BAR = 3;  // ±3 maps to full bar
+  // build rows — 每行显示当前分 + 范围进度条 + 满分上下限
+  let firstAdj = true;
   const rowsHtml = ai.scoreRows.map(r => {
-    const abspts  = Math.abs(r.pts);
-    const barW    = Math.min(100, (abspts / MAX_BAR) * 100);
-    const barColor= r.pts > 0 ? 'var(--long)' : r.pts < 0 ? 'var(--short)' : 'var(--b3)';
-    const barLeft = r.pts >= 0 ? '50%' : `${50 - barW/2}%`;
-    const ptsCls  = r.pts > 0 ? 'pos' : r.pts < 0 ? 'neg' : 'zer';
-    const ptsStr  = r.pts === 0 ? '0' : (r.pts > 0 ? '+' : '') + r.pts.toFixed(1);
-    const sep     = r.isAdj ? `<div style="font-family:var(--mono);font-size:8px;color:var(--dim);padding:3px 0 1px;letter-spacing:1px">── 修正因子 ──</div>` : '';
-    return `${r.isAdj && r === ai.scoreRows.find(x=>x.isAdj) ? sep : ''}
-      <div class="score-row">
-        <div class="score-ind">${esc(r.label)}</div>
-        <div class="score-val">${esc(String(r.val))}</div>
-        <div class="score-bar-wrap">
-          <div class="score-bar-fill" style="width:${barW/2}%;left:${r.pts>=0?'50%':(50-barW/2)+'%'};background:${barColor}"></div>
-          <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--b3)"></div>
-        </div>
-        <div class="score-pts ${ptsCls}">${ptsStr}</div>
+    const ptsCls = r.pts > 0 ? 'pos' : r.pts < 0 ? 'neg' : 'zer';
+    const ptsStr = r.pts === 0 ? '0' : (r.pts > 0 ? '+' : '') + r.pts.toFixed(1);
+    const barColor = r.pts > 0 ? 'var(--long)' : r.pts < 0 ? 'var(--short)' : 'var(--b3)';
+
+    // 范围标注（若有 range）
+    let rangeBar = '', rangeLbl = '';
+    if (r.range) {
+      const { pos, neg } = r.range;
+      const total = pos - neg;                      // 全范围跨度
+      const zeroLeft = (-neg / total) * 100;        // 0 刻度在条中的位置%
+      const fillW  = Math.abs(r.pts) / total * 100;
+      const fillL  = r.pts >= 0 ? zeroLeft : (zeroLeft - fillW);
+      rangeBar = `
+        <div style="position:relative;flex:1;min-width:80px;height:5px;background:var(--b2);border-radius:3px;margin:0 4px;">
+          <div style="position:absolute;left:${zeroLeft.toFixed(1)}%;top:-2px;bottom:-2px;width:1px;background:var(--b3)"></div>
+          <div style="position:absolute;left:${fillL.toFixed(1)}%;width:${fillW.toFixed(1)}%;height:100%;background:${barColor};border-radius:3px;transition:width .5s,left .5s"></div>
+        </div>`;
+      rangeLbl = `<span style="font-family:var(--mono);font-size:8px;color:var(--dim);white-space:nowrap">${neg > 0 ? '+' : ''}${neg} ~ +${pos}</span>`;
+    }
+
+    const sep = r.isAdj && firstAdj
+      ? `<div style="font-family:var(--mono);font-size:8px;color:var(--dim);padding:5px 0 2px;letter-spacing:1px;border-top:1px dashed var(--b2);margin-top:4px;">── 修正因子 ──</div>`
+      : '';
+    if (r.isAdj) firstAdj = false;
+
+    return `${sep}
+      <div class="score-row" style="align-items:center;">
+        <div class="score-ind" style="min-width:80px">${esc(r.label)}</div>
+        <div class="score-val" style="min-width:60px">${esc(String(r.val))}</div>
+        ${rangeBar}
+        ${rangeLbl}
+        <div class="score-pts ${ptsCls}" style="min-width:36px;text-align:right">${ptsStr}</div>
       </div>`;
   }).join('');
 
@@ -2014,10 +2131,43 @@ function renderScorePanel(pfx, ai) {
     return `<div class="score-map-cell ${cell.cls}${active?' active':''}">${active?'▶ ':''  }${cell.label}<br><span style="opacity:.6;font-size:7px">${cell.min===-Infinity?'≤-3':cell.max===Infinity?'≥+3':cell.min>=0?'+'+cell.min:cell.min}~${cell.max===Infinity?'':cell.max>=0?'+'+cell.max:cell.max}</span></div>`;
   }).join('');
 
+  // 置信度明细
+  const confHtml = (ai.confRows || []).map((r, i) => {
+    if (r.isBase) return `
+      <div class="score-row" style="background:var(--s2);border-radius:4px;padding:5px 8px;margin-bottom:2px;">
+        <div class="score-ind" style="color:var(--text)">${esc(r.label)}</div>
+        <div class="score-val" style="color:var(--dim);font-size:9px">${esc(r.reason)}</div>
+        <div class="score-pts" style="color:var(--gold);min-width:36px">${r.delta}%</div>
+      </div>`;
+    if (r.isFinal) return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--s3);border-radius:4px;margin-top:4px;border:1px solid var(--b2);">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--text)">${esc(r.label)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--dim)">${esc(r.reason)}</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${r.delta>=70?'var(--long)':r.delta>=50?'var(--gold)':'var(--short)'}">${r.delta}%</div>
+      </div>`;
+    if (r.isSuppressed) return `
+      <div class="score-row" style="border-left:2px solid var(--short);padding-left:6px;">
+        <div class="score-ind" style="color:var(--short)">${esc(r.label)}</div>
+        <div class="score-val" style="color:var(--dim);font-size:9px">${esc(r.reason)}</div>
+        <div class="score-pts zer">—</div>
+      </div>`;
+    const dSign = r.delta > 0 ? '+' : '';
+    const dCls  = r.delta > 0 ? 'pos' : r.delta < 0 ? 'neg' : 'zer';
+    return `
+      <div class="score-row">
+        <div class="score-ind">${esc(r.label)}</div>
+        <div class="score-val" style="font-size:9px">${esc(r.reason)}</div>
+        <div class="score-pts ${dCls}">${dSign}${r.delta}%</div>
+      </div>`;
+  }).join('');
+
   DOM[pfx+'ScoreBody'].innerHTML = rowsHtml +
     `<div class="score-divider"></div>
      <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:6px;letter-spacing:1px;">判定区间对照</div>
-     <div class="score-map">${mapHtml}</div>`;
+     <div class="score-map">${mapHtml}</div>
+     <div class="score-divider"></div>
+     <div style="font-family:var(--mono);font-size:9px;color:var(--purple);margin-bottom:6px;letter-spacing:1px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:3px;height:12px;background:var(--purple);border-radius:2px"></span>置信度构成</div>
+     ${confHtml}`;
 }
 
 const _scoreCollapsed = {};
@@ -2186,6 +2336,7 @@ async function fullRefresh(manual = false) {
     setSt('分析完成 ✓', 'ok');
     state.countdown = REFRESH_SEC;
     state.lastRefreshTime = Date.now();
+    DOM['nxt'].textContent = `${Math.floor(REFRESH_SEC/60)}:00 后刷新`;
     updateFreshness();
     updateLearnProgress();
     setProgress(100);
@@ -2195,6 +2346,8 @@ async function fullRefresh(manual = false) {
     console.error('Error:', e);
     setSt('分析异常', 'err');
     showAlert('分析过程出错，请稍后重试', 'err');
+    // 即使出错也重置倒计时，避免连续失败堆积
+    state.countdown = REFRESH_SEC;
   } finally {
     state.running = false;
     if (manual) {
@@ -2203,6 +2356,188 @@ async function fullRefresh(manual = false) {
       DOM['rBtn'].disabled = false;
     }
   }
+}
+
+/* ─────────── 标签页可见性：切回来时若已超过 2 分钟未刷新则立即刷新 ─────────── */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  const stale = !state.lastRefreshTime || (Date.now() - state.lastRefreshTime > 2 * 60 * 1000);
+  if (stale && !state.running) fullRefresh();
+});
+
+/* ─────────── GDELT 宏观新闻 ─────────── */
+let _newsLoaded = false;
+
+async function fetchGDELT(query, maxRecords = 8, hours = 24) {
+  const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=${maxRecords}&format=json&TIMESPAN=${hours * 60}`;
+  return await jFetch(url, 10000);
+}
+
+function fmtGDELTDate(ds) {
+  if (!ds) return '--';
+  try {
+    const s = String(ds);
+    // format: "20240101T123456Z"
+    const d = new Date(`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}T${s.slice(9,11)}:${s.slice(11,13)}:${s.slice(13,15)}Z`);
+    return d.toLocaleString('zh-CN', { hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+  } catch { return ds; }
+}
+
+function renderNewsSection(articles, tag, tagCls, emptyMsg) {
+  if (!articles || !articles.length) {
+    return `<div class="news-empty" style="padding:14px">${esc(emptyMsg)}</div>`;
+  }
+  return articles.map(a => {
+    const title  = esc(a.title || a.url || '--');
+    const url    = esc(a.url || '#');
+    const date   = fmtGDELTDate(a.seendate);
+    const domain = esc(a.domain || '');
+    const country= esc(a.sourcecountry || '');
+    return `<div class="news-card">
+      <div class="news-card-title"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></div>
+      <div class="news-meta">
+        <span class="news-tag ${tagCls}">${tag}</span>
+        <span>${date}</span>
+        ${domain ? `<span>${domain}</span>` : ''}
+        ${country ? `<span style="opacity:.6">${country}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadNews(manual = false) {
+  const contentEl = DOM['newsContent'] || document.getElementById('newsContent');
+  const tsEl      = DOM['newsTs']      || document.getElementById('newsTs');
+  const btnEl     = DOM['newsRefreshBtn'] || document.getElementById('newsRefreshBtn');
+  if (!contentEl) return;
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⟳ 加载中...'; }
+  contentEl.innerHTML = '<div class="news-empty">⏳ 正在拉取全球事件数据，请稍候...</div>';
+  try {
+    const [cryptoRaw, macroRaw] = await Promise.all([
+      fetchGDELT('bitcoin OR ethereum OR cryptocurrency OR crypto market', 8, 24),
+      fetchGDELT('federal reserve OR inflation OR interest rate OR trade tariff OR sanctions OR geopolitical', 6, 24),
+    ]);
+    const cryptoArticles = cryptoRaw?.articles ?? null;
+    const macroArticles  = macroRaw?.articles  ?? null;
+    const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    if (tsEl) tsEl.textContent = `更新于 ${now}`;
+    contentEl.innerHTML =
+      `<div class="news-section-hdr">加密市场相关新闻 · 近24小时</div>` +
+      renderNewsSection(cryptoArticles, 'CRYPTO', 'crypto', '暂无加密相关新闻，可能是 GDELT 网络限制，请稍后重试') +
+      `<div class="news-section-hdr" style="margin-top:24px;">宏观经济事件 · 近24小时</div>` +
+      renderNewsSection(macroArticles, 'MACRO', 'macro', '暂无宏观新闻') +
+      `<div class="news-source-note">
+        📡 数据来源：<a href="https://gdeltproject.org" target="_blank" style="color:var(--blue)">GDELT Project</a>（全球事件数据库）· 免费公开 · 覆盖100+语言新闻媒体<br>
+        ⚠ 新闻仅供参考，不构成投资建议。请结合主信号方向综合判断入场时机。
+      </div>`;
+    _newsLoaded = true;
+    // ── 新闻影响分析 ──
+    const impact = analyzeNewsImpact(cryptoArticles, macroArticles);
+    updateNewsImpactWidget(impact);
+  } catch(e) {
+    contentEl.innerHTML = `<div class="news-empty">⚠ 数据加载失败（${esc(e.message||'网络错误')}）<br>GDELT API 可能暂时不可用，请稍后重试。</div>`;
+    updateNewsImpactWidget(null);
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '⟳ 刷新新闻'; }
+    if (manual) _newsLoaded = true;
+  }
+}
+
+/* ─────────── 新闻影响分析 ─────────── */
+// 关键词权重表（正=利多，负=利空）
+const NEWS_KW = {
+  // ── 加密利多 ──
+  'etf approval':+1.2, 'etf approved':+1.2, 'spot etf':+1.0, 'institutional':+0.6,
+  'adoption':+0.7, 'partnership':+0.5, 'integration':+0.4, 'launch':+0.3,
+  'bullish':+0.8, 'rally':+0.7, 'surge':+0.7, 'record high':+0.9, 'ath':+0.8,
+  'halving':+0.6, 'upgrade':+0.5, 'milestone':+0.4, 'recovery':+0.5,
+  'rate cut':+0.8, 'dovish':+0.7, 'easing':+0.6, 'stimulus':+0.6,
+  'weak dollar':+0.5, 'soft landing':+0.4, 'fed pivot':+0.9,
+  // ── 加密利空 ──
+  'crash':-1.0, 'collapse':-1.1, 'ban':-0.9, 'banned':-0.9,
+  'hack':-0.8, 'exploit':-0.8, 'fraud':-0.7, 'scam':-0.7,
+  'lawsuit':-0.6, 'sec':-0.5, 'crackdown':-0.7, 'regulate':-0.4,
+  'bearish':-0.8, 'sell-off':-0.7, 'selloff':-0.7, 'dump':-0.6,
+  'liquidation':-0.6, 'liquidated':-0.5, 'fear':-0.4,
+  // ── 宏观利空 ──
+  'rate hike':  -0.8, 'hawkish':-0.7, 'inflation':-0.5, 'cpi':-0.4,
+  'recession':  -0.9, 'default':-0.9, 'tariff':-0.6, 'trade war':-0.7,
+  'sanctions':  -0.6, 'geopolitical':-0.5, 'conflict':-0.5,
+  'banking crisis':-0.9, 'debt ceiling':-0.5,
+};
+
+function analyzeNewsImpact(cryptoArticles, macroArticles) {
+  const allTitles = [...(cryptoArticles||[]), ...(macroArticles||[])]
+    .map(a => (a.title || '').toLowerCase());
+  if (!allTitles.length) return null;
+
+  let score = 0;
+  const bullHits = [], bearHits = [];
+
+  allTitles.forEach(t => {
+    for (const [kw, w] of Object.entries(NEWS_KW)) {
+      if (t.includes(kw)) {
+        score += w;
+        if (w > 0 && !bullHits.includes(kw)) bullHits.push(kw);
+        if (w < 0 && !bearHits.includes(kw)) bearHits.push(kw);
+      }
+    }
+  });
+
+  // 归一化到 -3 ~ +3
+  score = Math.max(-3, Math.min(3, score));
+
+  let label, cls;
+  if      (score >  1.5) { label = '利多'; cls = 'bullish'; }
+  else if (score >  0.4) { label = '偏多'; cls = 'sl-bull'; }
+  else if (score < -1.5) { label = '利空'; cls = 'bearish'; }
+  else if (score < -0.4) { label = '偏空'; cls = 'sl-bear'; }
+  else                   { label = '中性'; cls = 'neutral'; }
+
+  return { score: parseFloat(score.toFixed(2)), label, cls, bullHits: bullHits.slice(0,6), bearHits: bearHits.slice(0,6) };
+}
+
+function updateNewsImpactWidget(impact) {
+  const body = DOM['niBody'] || document.getElementById('niBody');
+  const ts   = DOM['niTs']   || document.getElementById('niTs');
+  if (!body) return;
+
+  if (!impact) {
+    body.innerHTML = '<div class="ni-no-data">新闻数据不足，无法生成影响评估。</div>';
+    return;
+  }
+
+  const { score, label, cls, bullHits, bearHits } = impact;
+  const pct  = Math.abs(score) / 3 * 50;  // 0-50%（一侧最大50%）
+  const side  = score >= 0 ? 'pos' : 'neg';
+  const nowStr = new Date().toLocaleTimeString('zh-CN', { hour12:false });
+  if (ts) ts.textContent = `更新于 ${nowStr}`;
+
+  const kwHtml = [
+    ...bullHits.map(k => `<span class="ni-kw bull">↑ ${k}</span>`),
+    ...bearHits.map(k => `<span class="ni-kw bear">↓ ${k}</span>`),
+  ].join('') || '<span style="font-family:var(--mono);font-size:9px;color:var(--dim)">无明显关键词触发</span>';
+
+  // 根据影响方向生成信号建议语
+  let advice = '';
+  if      (cls === 'bullish') advice = '新闻面整体偏乐观，对多头信号有正向支撑，可适当提高信号权重。';
+  else if (cls === 'sl-bull') advice = '新闻面略偏正向，与多头信号共振时胜率更高，建议顺势操作。';
+  else if (cls === 'bearish') advice = '新闻面存在明显利空压力，建议对空头信号保持警惕或降低多单仓位。';
+  else if (cls === 'sl-bear') advice = '新闻面略偏负向，信号若与多头共振需谨慎，空头信号优先级可上调。';
+  else                        advice = '新闻面处于中性区间，对当前信号方向无明显增强或削弱作用。';
+
+  body.innerHTML = `
+    <div class="ni-verdict">
+      <span class="ni-badge ${cls}">${label}</span>
+      <div class="ni-score-bar">
+        <div class="ni-center-mark"></div>
+        <div class="ni-score-fill ${side}" style="width:${pct}%"></div>
+      </div>
+      <span class="ni-score-label">${score >= 0 ? '+' : ''}${score} / 3.0</span>
+    </div>
+    <div class="ni-keywords">${kwHtml}</div>
+    <div class="ni-note">💡 ${advice}<br>
+    <span style="opacity:.6">来源：GDELT 全球新闻 · 关键词权重模型 · 仅供参考，不构成投资建议</span></div>`;
 }
 
 /* ─────────── 启动 ─────────── */
