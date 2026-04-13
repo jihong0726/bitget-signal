@@ -827,7 +827,7 @@ body {
   <div class="panel" id="tab-news">
     <div class="news-actions">
       <button class="news-action-btn" id="newsRefreshBtn" onclick="loadNews(true)">⟳ 刷新新闻</button>
-      <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">via GDELT · 全球事件数据库</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">RSS · CoinTelegraph / BBC / Reuters 等多源</span>
       <span id="newsTs" style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:auto"></span>
     </div>
     <div id="newsContent">
@@ -842,7 +842,7 @@ body {
 /* ─────────── 常量（[FIX] 原散落魔法数字统一提取） ─────────── */
 const STORAGE_KEY  = 'bgsig_v5';
 const SETTINGS_KEY = 'bgsig_settings_v1';
-const REFRESH_SEC  = 300;
+const REFRESH_SEC  = 120;   // 全量刷新间隔 2 分钟（原 5 分钟）
 const MIN_SIGNALS_FOR_REPORT = 10;
 const MAX_HISTORY  = 150;
 
@@ -921,6 +921,8 @@ let state = {
   history         : safeParse(localStorage.getItem(STORAGE_KEY), []),
   lastBtcPrice    : null,
   lastEthPrice    : null,
+  lastBtcSignal   : null,   // 用于方向变化检测
+  lastEthSignal   : null,
   lastRefreshTime : null,
   refreshCooldown : 0,   // seconds remaining on manual refresh cooldown
 };
@@ -998,7 +1000,7 @@ function updateFreshness() {
   bar.style.display = 'flex';
   const ageMs = Date.now() - state.lastRefreshTime;
   const ageSec = Math.floor(ageMs / 1000);
-  const stale  = ageMs > 6 * 60 * 1000;  // >6 min = stale
+  const stale  = ageMs > 3 * 60 * 1000;  // >3 min = stale（原 6 分钟）
   bar.className = 'freshness-bar' + (stale ? ' stale' : '');
   DOM['freshnessTxt'].textContent = stale
     ? `⚠ 数据已 ${Math.floor(ageMs/60000)} 分钟未更新`
@@ -1014,6 +1016,40 @@ function setProgress(pct) {
 setInterval(() => {
   DOM['clk'].textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
 }, 1000);
+
+/* ─────────── 15s 实时价格展示（更新 DOM 价格，不触发全量刷新） ─────────── */
+setInterval(async () => {
+  if (state.running || document.hidden || !state.lastRefreshTime) return;
+  try {
+    const [btcTk, ethTk] = await Promise.all([
+      jFetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT'),
+      jFetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT'),
+    ]);
+    const bp = okxPrice(btcTk), ep = okxPrice(ethTk);
+    const bc = okxChg24(btcTk), ec = okxChg24(ethTk);
+    // 价格跳动检测（单次 15s 内变动 > 0.15% 加高亮）
+    if (bp && state.lastBtcPrice) {
+      const pctChg = Math.abs(bp - state.lastBtcPrice) / state.lastBtcPrice * 100;
+      if (pctChg > 0.15) {
+        const dir = bp > state.lastBtcPrice ? 'bull' : 'bear';
+        const el = DOM['bP'];
+        if (el) { el.style.transition = 'color .3s'; el.style.color = dir === 'bull' ? '#16a34a' : 'var(--red)'; setTimeout(() => { el.style.color = ''; }, 1200); }
+      }
+    }
+    if (ep && state.lastEthPrice) {
+      const pctChg = Math.abs(ep - state.lastEthPrice) / state.lastEthPrice * 100;
+      if (pctChg > 0.15) {
+        const dir = ep > state.lastEthPrice ? 'bull' : 'bear';
+        const el = DOM['eP'];
+        if (el) { el.style.transition = 'color .3s'; el.style.color = dir === 'bull' ? '#16a34a' : 'var(--red)'; setTimeout(() => { el.style.color = ''; }, 1200); }
+      }
+    }
+    if (bp) { state.lastBtcPrice = bp; if (DOM['bP']) DOM['bP'].textContent = fmtP(bp, false); }
+    if (ep) { state.lastEthPrice = ep; if (DOM['eP']) DOM['eP'].textContent = fmtP(ep, true); }
+    if (bc != null) { if (DOM['bC']) { DOM['bC'].textContent = (bc>=0?'+':'')+bc.toFixed(2)+'%'; DOM['bC'].className = 'cc-chg ' + (bc>=0?'pos':'neg'); } }
+    if (ec != null) { if (DOM['eC']) { DOM['eC'].textContent = (ec>=0?'+':'')+ec.toFixed(2)+'%'; DOM['eC'].className = 'cc-chg ' + (ec>=0?'pos':'neg'); } }
+  } catch(e) { /* silent */ }
+}, 15000);
 
 /* ─────────── 30s 轻量价格轮询（仅用于 TP/SL 自动判定，不触发全量刷新） ─────────── */
 setInterval(async () => {
@@ -1353,6 +1389,22 @@ function analyzeSignal(sym, coin, mkt, env) {
                    : score <= -T.SCORE_WEAK  ? `得分≤-${T.SCORE_WEAK} 弱信号`
                    : '得分在中性区间';
   confRows.push({ label:'基础置信度', reason: scoreLabel, delta: baseConf, isBase: true });
+
+  // ── 新闻面评分注入（若已加载，权重 ±1.2 分，顺势加分/逆势减分）
+  if (_newsImpactData && Math.abs(_newsImpactData.score) > 0.3) {
+    const ns = _newsImpactData.score;
+    const R_NEWS = { pos: 1.2, neg: -1.2 };
+    // 同向共振：新闻多+LONG → +pts；新闻空+SHORT → +pts
+    // 逆向对冲：新闻多+SHORT → -pts；新闻空+LONG → -pts
+    let newsPts = 0;
+    if (signal === 'LONG')  newsPts = parseFloat((ns * 0.4).toFixed(2));   // 最多 ±1.2
+    if (signal === 'SHORT') newsPts = parseFloat((-ns * 0.4).toFixed(2));
+    if (newsPts !== 0) {
+      const newsLabel = _newsImpactData.label;
+      const newsSig   = newsPts > 0 ? 'bull' : 'bear';
+      addInd(`新闻面 (${newsLabel})`, `${ns >= 0 ? '+' : ''}${ns}`, newsSig, newsPts, R_NEWS);
+    }
+  }
 
   // 反向惩罚
   if (rsi1h > 72 && signal === 'LONG')      { baseConf -= 12; baseRisk += 12; confRows.push({ label:'RSI 超买惩罚',    reason:`RSI 1H ${nv(rsi1h)} > 72，做多风险高`, delta:-12 }); }
@@ -2325,6 +2377,20 @@ async function fullRefresh(manual = false) {
     renderScalpPanel('b', 'btc', d.btc);
     renderScalpPanel('e', 'eth', d.eth);
 
+    // ── 信号方向变化检测（首次不报警，后续每次比对）
+    const newBtcSig = aiResult.result.btc?.signal;
+    const newEthSig = aiResult.result.eth?.signal;
+    if (state.lastBtcSignal && state.lastBtcSignal !== newBtcSig) {
+      const arrow = newBtcSig === 'LONG' ? '↑ 做多' : newBtcSig === 'SHORT' ? '↓ 做空' : '→ 中性';
+      showAlert(`⚡ BTC 信号切换 ${state.lastBtcSignal} → ${arrow}`, newBtcSig === 'NEUTRAL' ? 'warn' : 'info');
+    }
+    if (state.lastEthSignal && state.lastEthSignal !== newEthSig) {
+      const arrow = newEthSig === 'LONG' ? '↑ 做多' : newEthSig === 'SHORT' ? '↓ 做空' : '→ 中性';
+      showAlert(`⚡ ETH 信号切换 ${state.lastEthSignal} → ${arrow}`, newEthSig === 'NEUTRAL' ? 'warn' : 'info');
+    }
+    state.lastBtcSignal = newBtcSig;
+    state.lastEthSignal = newEthSig;
+
     if (aiResult.result.full_analysis) {
       DOM['fCard'].style.display = 'block';
       DOM['fTxt'].innerHTML = `<p>${aiResult.result.full_analysis.replace(/\n/g, '<br>')}</p>`;
@@ -2361,12 +2427,13 @@ async function fullRefresh(manual = false) {
 /* ─────────── 标签页可见性：切回来时若已超过 2 分钟未刷新则立即刷新 ─────────── */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
-  const stale = !state.lastRefreshTime || (Date.now() - state.lastRefreshTime > 2 * 60 * 1000);
-  if (stale && !state.running) fullRefresh();
+  const stale = !state.lastRefreshTime || (Date.now() - state.lastRefreshTime > 1 * 60 * 1000);
+  if (stale && !state.running) fullRefresh();  // 切回页面 1 分钟未刷新立即触发（原 2 分钟）
 });
 
 /* ─────────── 宏观新闻（多源兜底） ─────────── */
-let _newsLoaded = false;
+let _newsLoaded    = false;
+let _newsImpactData = null;  // 全局缓存最新新闻影响分析结果，供 analyzeSignal 使用
 
 // ── 日期格式兼容（GDELT "20240101T123456Z" / ISO "2024-01-01T12:34:56Z" / 时间戳）
 function fmtNewsDate(ds) {
@@ -2383,44 +2450,57 @@ function fmtNewsDate(ds) {
   } catch { return ds; }
 }
 
-// ── 来源 A: Messari（加密新闻，免费无 key，CORS 原生支持）
-async function fetchMessariNews(limit = 10) {
-  const raw = await jFetch(`https://data.messari.io/api/v1/news?limit=${limit}`, 9000);
-  if (!raw?.data?.length) return null;
-  return raw.data.map(a => ({
-    title: a.title || '--',
-    url:   a.url   || '#',
-    seendate: a.published_at || '',
-    domain: a.author?.name || a.references?.[0]?.name || '',
-    sourcecountry: 'US',
-  }));
-}
-
-// ── 来源 B: GDELT（作为 fallback，宏观 & 加密均可）
-async function fetchGDELT(query, maxRecords = 8, hours = 24) {
-  const gdeltUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=${maxRecords}&format=json&TIMESPAN=${hours * 60}`;
-  const raw = await jFetch(gdeltUrl, 10000);
-  if (!raw?.articles?.length) return null;
-  return raw.articles.map(a => ({
-    title: a.title || '--',
-    url:   a.url   || '#',
-    seendate: a.seendate || '',
-    domain: a.domain || '',
-    sourcecountry: a.sourcecountry || '',
-  }));
-}
-
-// ── 来源 C: CryptoPanic（加密新闻聚合，免费公开 endpoint）
-async function fetchCryptoPanic(limit = 10) {
-  const raw = await jFetch(`https://cryptopanic.com/api/v1/posts/?auth_token=free&public=true&limit=${limit}`, 9000);
-  if (!raw?.results?.length) return null;
-  return raw.results.map(a => ({
-    title: a.title || '--',
-    url:   a.url   || a.source?.url || '#',
-    seendate: a.published_at || '',
-    domain: a.source?.domain || '',
+// ── RSS → JSON（via rss2json.com，专为浏览器端设计，CORS 原生支持，稳定可靠）
+async function fetchRSS(rssUrl, limit = 10) {
+  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=${limit}`;
+  const raw = await jFetch(url, 10000);
+  if (raw?.status !== 'ok' || !raw?.items?.length) return null;
+  const feedName = raw.feed?.title || new URL(rssUrl).hostname;
+  return raw.items.map(a => ({
+    title:    a.title   || '--',
+    url:      a.link    || '#',
+    seendate: a.pubDate || '',
+    domain:   feedName,
     sourcecountry: '',
   }));
+}
+
+// ── 加密新闻 RSS 源（按优先级顺序尝试）
+const CRYPTO_RSS = [
+  { url:'https://cointelegraph.com/rss',                    name:'CoinTelegraph' },
+  { url:'https://www.coindesk.com/arc/outboundfeeds/rss/',  name:'CoinDesk' },
+  { url:'https://decrypt.co/feed',                           name:'Decrypt' },
+  { url:'https://bitcoinist.com/feed/',                      name:'Bitcoinist' },
+  { url:'https://cryptopotato.com/feed/',                    name:'CryptoPotato' },
+];
+
+// ── 宏观新闻 RSS 源（按优先级顺序尝试）
+const MACRO_RSS = [
+  { url:'https://feeds.bbci.co.uk/news/business/rss.xml',         name:'BBC Business' },
+  { url:'https://feeds.reuters.com/reuters/businessNews',          name:'Reuters Business' },
+  { url:'https://www.cnbc.com/id/10001147/device/rss/rss.html',   name:'CNBC Markets' },
+  { url:'https://feeds.a.dj.com/rss/RSSMarketsMain.xml',          name:'WSJ Markets' },
+  { url:'https://www.ft.com/?format=rss',                          name:'Financial Times' },
+];
+
+async function fetchCryptoNews(limit = 10) {
+  for (const src of CRYPTO_RSS) {
+    try {
+      const articles = await fetchRSS(src.url, limit);
+      if (articles?.length) return { articles, source: src.name };
+    } catch(e) { /* 继续下一个 */ }
+  }
+  return { articles: null, source: '' };
+}
+
+async function fetchMacroNews(limit = 8) {
+  for (const src of MACRO_RSS) {
+    try {
+      const articles = await fetchRSS(src.url, limit);
+      if (articles?.length) return { articles, source: src.name };
+    } catch(e) { /* 继续下一个 */ }
+  }
+  return { articles: null, source: '' };
 }
 
 function renderNewsSection(articles, tag, tagCls, emptyMsg) {
@@ -2456,42 +2536,36 @@ async function loadNews(manual = false) {
   let cryptoArticles = null, macroArticles = null, cryptoSrc = '', macroSrc = '';
 
   try {
-    // ── 加密新闻：Messari → CryptoPanic → GDELT
-    cryptoArticles = await fetchMessariNews(10);
-    if (cryptoArticles?.length) { cryptoSrc = 'Messari'; }
-    else {
-      cryptoArticles = await fetchCryptoPanic(10);
-      if (cryptoArticles?.length) { cryptoSrc = 'CryptoPanic'; }
-      else {
-        cryptoArticles = await fetchGDELT('bitcoin OR ethereum OR cryptocurrency', 8, 48);
-        if (cryptoArticles?.length) cryptoSrc = 'GDELT';
-      }
-    }
-
-    // ── 宏观新闻：GDELT → GDELT更宽泛
-    macroArticles = await fetchGDELT('federal reserve OR inflation OR tariff OR sanctions OR recession', 6, 48);
-    if (macroArticles?.length) { macroSrc = 'GDELT'; }
-    else {
-      macroArticles = await fetchGDELT('economy OR market OR trade OR geopolitical', 6, 72);
-      if (macroArticles?.length) macroSrc = 'GDELT·宽查询';
-    }
+    // ── 加密 & 宏观新闻并行拉取（RSS → rss2json.com）
+    const [cryptoResult, macroResult] = await Promise.all([
+      fetchCryptoNews(10),
+      fetchMacroNews(8),
+    ]);
+    cryptoArticles = cryptoResult.articles;
+    cryptoSrc      = cryptoResult.source;
+    macroArticles  = macroResult.articles;
+    macroSrc       = macroResult.source;
 
     const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
     if (tsEl) tsEl.textContent = `更新于 ${now}`;
 
+    const cryptoEmpty = '⚠ 所有 RSS 源均不可用，请检查网络连接后重试';
+    const macroEmpty  = '⚠ 宏观 RSS 源暂时不可用，请稍后重试';
+
     contentEl.innerHTML =
       `<div class="news-section-hdr">加密市场相关新闻${cryptoSrc ? ' · via ' + cryptoSrc : ''}</div>` +
-      renderNewsSection(cryptoArticles, 'CRYPTO', 'crypto', '⚠ 三个数据源均无法获取加密新闻，请检查网络或稍后重试') +
+      renderNewsSection(cryptoArticles, 'CRYPTO', 'crypto', cryptoEmpty) +
       `<div class="news-section-hdr" style="margin-top:24px;">宏观经济事件${macroSrc ? ' · via ' + macroSrc : ''}</div>` +
-      renderNewsSection(macroArticles, 'MACRO', 'macro', '⚠ 无法获取宏观新闻，请稍后重试') +
+      renderNewsSection(macroArticles, 'MACRO', 'macro', macroEmpty) +
       `<div class="news-source-note">
-        📡 数据来源：Messari · CryptoPanic · GDELT Project（按可用性自动切换）<br>
+        📡 数据来源：CoinTelegraph · CoinDesk · Decrypt · BBC Business · Reuters（RSS · 按可用性自动切换）<br>
         ⚠ 新闻仅供参考，不构成投资建议。请结合主信号方向综合判断入场时机。
       </div>`;
 
     _newsLoaded = true;
-    // ── 新闻影响分析 → 更新信号面板
+    // ── 新闻影响分析 → 全局缓存 + 更新信号面板
     const impact = analyzeNewsImpact(cryptoArticles, macroArticles);
+    _newsImpactData = impact;   // ← 供 analyzeSignal 读取
     updateNewsImpactWidget(impact);
 
   } catch(e) {
