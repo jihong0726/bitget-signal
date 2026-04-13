@@ -106,6 +106,7 @@ body {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 10px;
   background: var(--s2); border: 1px solid var(--b2); border-radius: 20px; white-space: nowrap;
+  font-weight: 500;
 }
 .status-pill .dot {
   width: 6px; height: 6px; border-radius: 50%;
@@ -170,12 +171,14 @@ body {
   font-family: var(--mono); font-size: 11px; line-height: 1.5; animation: fadeUp .3s ease;
 }
 .alert-bar.on { display: flex; }
-.alert-bar.warn { background: rgba(245,166,35,.07); border: 1px solid rgba(245,166,35,.2); color: var(--gold); }
-.alert-bar.err  { background: rgba(246,70,93,.07);  border: 1px solid rgba(246,70,93,.2);  color: var(--short); }
-.alert-bar.info { background: rgba(167,139,250,.07); border: 1px solid rgba(167,139,250,.2); color: var(--purple); }
+.alert-bar.warn { background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.28); color: var(--gold); }
+.alert-bar.err  { background: rgba(246,70,93,.12);  border: 1px solid rgba(246,70,93,.28);  color: var(--short); }
+.alert-bar.info { background: rgba(167,139,250,.12); border: 1px solid rgba(167,139,250,.28); color: var(--purple); }
+/* Alert queue */
+.alert-queue { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
 .alert-icon { font-size: 13px; flex-shrink: 0; }
 .pbar { height: 2px; background: var(--b1); border-radius: 1px; overflow: hidden; margin-bottom: 18px; }
-.pfill { height: 100%; border-radius: 1px; background: linear-gradient(90deg, var(--gold), var(--long)); transition: width .4s ease; box-shadow: 0 0 8px rgba(245,166,35,.5); }
+.pfill { height: 100%; border-radius: 1px; background: linear-gradient(90deg, var(--gold), var(--long)); transition: width .4s ease; }
 
 /* Market Overview */
 .mbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 10px; margin-bottom: 20px; }
@@ -221,8 +224,8 @@ body {
 .cc.btc .cc-signal::before { background: radial-gradient(circle at 0% 50%, #f7931a, transparent 60%); opacity: 0.08; }
 .cc.eth .cc-signal::before { background: radial-gradient(circle at 0% 50%, #627eea, transparent 60%); opacity: 0.08; }
 .sig-label { font-family: var(--disp); font-size: 40px; letter-spacing: 4px; line-height: 1; }
-.sig-label.long    { color: var(--long);  text-shadow: 0 0 30px rgba(14,203,129,.3); }
-.sig-label.short   { color: var(--short); text-shadow: 0 0 30px rgba(246,70,93,.3); }
+.sig-label.long    { color: var(--long); }
+.sig-label.short   { color: var(--short); }
 .sig-label.neutral { color: var(--neut); }
 .sig-label.loading { color: var(--dim); font-size: 18px; letter-spacing: 2px; }
 .sig-conf-wrap { text-align: right; }
@@ -250,9 +253,9 @@ body {
   padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-size: 9px;
   letter-spacing: 0.5px; border: 1px solid; white-space: nowrap;
 }
-.ind-chip.bull { color: var(--long);  border-color: rgba(14,203,129,.25); background: rgba(14,203,129,.07); }
-.ind-chip.bear { color: var(--short); border-color: rgba(246,70,93,.25);  background: rgba(246,70,93,.07); }
-.ind-chip.neut { color: var(--neut);  border-color: rgba(136,146,164,.2);  background: rgba(136,146,164,.05); }
+.ind-chip.bull { color: var(--long);  border-color: rgba(14,203,129,.35); background: rgba(14,203,129,.13); }
+.ind-chip.bear { color: var(--short); border-color: rgba(246,70,93,.35);  background: rgba(246,70,93,.13); }
+.ind-chip.neut { color: var(--neut);  border-color: rgba(136,146,164,.25); background: rgba(136,146,164,.10); }
 .ind-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .insight-bar {
   display: none; padding: 9px 16px; border-top: 1px solid var(--b1);
@@ -300,10 +303,10 @@ body {
   position: relative; margin-bottom: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.3);
 }
 .fg-marker {
-  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  width: 3px; height: 18px; background: rgba(0,0,0,0.6);
   position: absolute; top: 50%; transform: translate(-50%,-50%);
-  box-shadow: 0 0 10px rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.4);
-  transition: left 1s cubic-bezier(.25,.46,.45,.94); border: 2px solid rgba(0,0,0,.3);
+  border-radius: 2px;
+  transition: left 1s cubic-bezier(.25,.46,.45,.94);
 }
 .fg-bar-labels { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 1px; }
 
@@ -420,6 +423,78 @@ body {
 
 @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
 .skeleton { background: linear-gradient(90deg,var(--b1) 25%,var(--b2) 50%,var(--b1) 75%); background-size: 200% auto; animation: shimmer 1.5s infinite; border-radius: 4px; display: inline-block; }
+
+/* 数据新鲜度指示 */
+.freshness-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 14px; margin-bottom: 14px;
+  font-family: var(--mono); font-size: 10px; color: var(--dim);
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--radius-sm);
+}
+.freshness-bar.stale { color: var(--short); border-color: rgba(246,70,93,.25); background: rgba(246,70,93,.05); }
+.freshness-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--long); flex-shrink: 0; }
+.freshness-bar.stale .freshness-dot { background: var(--short); }
+
+/* 学习进度条 */
+.learn-progress {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; margin-bottom: 14px;
+  background: rgba(167,139,250,.07); border: 1px solid rgba(167,139,250,.2);
+  border-radius: var(--radius-sm);
+}
+.lp-label { font-family: var(--mono); font-size: 10px; color: var(--purple); white-space: nowrap; }
+.lp-track { flex: 1; height: 4px; background: var(--b2); border-radius: 2px; overflow: hidden; }
+.lp-fill  { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--purple), var(--purple2)); transition: width .6s ease; }
+.lp-count { font-family: var(--mono); font-size: 10px; color: var(--purple); white-space: nowrap; min-width: 40px; text-align: right; }
+
+/* 短线参考面板 */
+.scalp-panel {
+  border-top: 1px solid var(--b1); padding: 12px 16px;
+  background: var(--s2);
+}
+.scalp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; cursor: pointer; user-select: none;
+}
+.scalp-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  color: var(--dim); display: flex; align-items: center; gap: 6px;
+}
+.scalp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 4px; font-family: var(--mono);
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+}
+.scalp-badge.long  { color: var(--long);  background: rgba(14,203,129,.13); border: 1px solid rgba(14,203,129,.3); }
+.scalp-badge.short { color: var(--short); background: rgba(246,70,93,.13);  border: 1px solid rgba(246,70,93,.3);  }
+.scalp-badge.wait  { color: var(--neut);  background: rgba(136,146,164,.12);border: 1px solid rgba(136,146,164,.25);}
+.scalp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.scalp-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px; font-family: var(--mono);
+  font-size: 9px; letter-spacing: 0.5px; border: 1px solid; white-space: nowrap;
+}
+.scalp-chip.bull { color: var(--long);  border-color: rgba(14,203,129,.35); background: rgba(14,203,129,.10); }
+.scalp-chip.bear { color: var(--short); border-color: rgba(246,70,93,.35);  background: rgba(246,70,93,.10);  }
+.scalp-chip.neut { color: var(--neut);  border-color: rgba(136,146,164,.25);background: rgba(136,146,164,.08);}
+.scalp-levels {
+  display: flex; gap: 12px; font-family: var(--mono); font-size: 10px;
+  padding: 7px 10px; background: var(--s1); border-radius: var(--radius-sm);
+  border: 1px solid var(--b1); flex-wrap: wrap; margin-top: 6px;
+}
+.scalp-level { display: flex; flex-direction: column; gap: 2px; }
+.scalp-level-lbl { font-size: 8px; letter-spacing: 1.5px; color: var(--dim); }
+.scalp-level-val { font-weight: 600; }
+.scalp-conf-bar { height: 3px; background: var(--b2); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.scalp-conf-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+.scalp-toggle { font-family: var(--mono); font-size: 9px; color: var(--dim); }
+
+/* 导出/导入按钮 */
+.history-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.export-btn { padding: 6px 14px; background: transparent; border: 1px solid rgba(3,105,161,.3); border-radius: var(--radius-sm); color: var(--blue); font-family: var(--mono); font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: all .2s; }
+.export-btn:hover { background: rgba(3,105,161,.08); border-color: rgba(3,105,161,.5); }
+.import-btn { padding: 6px 14px; background: transparent; border: 1px solid rgba(109,40,217,.3); border-radius: var(--radius-sm); color: var(--purple); font-family: var(--mono); font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: all .2s; }
+.import-btn:hover { background: rgba(109,40,217,.08); border-color: rgba(109,40,217,.5); }
 </style>
 </head>
 <body>
@@ -430,7 +505,7 @@ body {
     <div>
       <div class="brand-name">币格信号</div>
     </div>
-    <div class="brand-tag">智能学习引擎 v5.1</div>
+    <div class="brand-tag">OKX 行情 · 学习引擎 v5.3</div>
   </div>
   <div class="status-row">
     <div class="status-pill">
@@ -448,7 +523,7 @@ body {
       <div class="ldot"></div>
       <span id="learnTxt">学习中</span>
     </div>
-    <button class="refresh-btn" id="rBtn" onclick="fullRefresh()">⟳ 立即刷新</button>
+    <button class="refresh-btn" id="rBtn" onclick="fullRefresh(true)">⟳ 立即刷新</button>
   </div>
 </header>
 
@@ -463,7 +538,11 @@ body {
 
   <!-- Panel 1 -->
   <div class="panel active" id="tab-signals">
-    <div class="alert-bar" id="errBar"><span class="alert-icon">ℹ</span><span id="errTxt"></span></div>
+    <div id="alertQueue" class="alert-queue"></div>
+    <div class="freshness-bar" id="freshnessBar" style="display:none">
+      <div class="freshness-dot" id="freshnessDot"></div>
+      <span id="freshnessTxt">数据已更新</span>
+    </div>
     <div class="pbar"><div class="pfill" id="pFill" style="width:0%"></div></div>
     <div class="mbar" id="mBar">
       <div class="mc"><div class="mc-label">恐惧贪婪指数</div><div class="mc-val" style="color:var(--dim)" id="mb0">--</div><div class="mc-sub" id="mb0s">--</div></div>
@@ -497,6 +576,24 @@ body {
         <div class="insight-bar" id="bInsight"></div>
         <div class="analysis-text" id="bAt">等待分析结果...</div>
         <div class="timestamp-bar" id="bUl"><span>--</span></div>
+        <div class="scalp-panel" id="bScalp" style="display:none">
+          <div class="scalp-header" onclick="toggleScalp('b')">
+            <div class="scalp-title">⚡ 5M 短线参考 <span style="color:var(--b3)">|</span> <span id="bScalpTs" style="color:var(--dim)">--</span></div>
+            <span class="scalp-toggle" id="bScalpToggle">▼</span>
+          </div>
+          <div id="bScalpBody">
+            <div class="scalp-row" id="bScalpChips"></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div id="bScalpBadge" class="scalp-badge wait">WAIT</div>
+              <div style="flex:1;min-width:100px;">
+                <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:3px;">短线置信度 <span id="bScalpConf" style="color:var(--text)">--%</span></div>
+                <div class="scalp-conf-bar"><div class="scalp-conf-fill" id="bScalpFill" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="scalp-levels" id="bScalpLevels"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:6px;line-height:1.5;" id="bScalpNote"></div>
+          </div>
+        </div>
       </div>
       <div class="cc eth">
         <div class="cc-accent"></div>
@@ -522,6 +619,24 @@ body {
         <div class="insight-bar" id="eInsight"></div>
         <div class="analysis-text" id="eAt">等待分析结果...</div>
         <div class="timestamp-bar" id="eUl"><span>--</span></div>
+        <div class="scalp-panel" id="eScalp" style="display:none">
+          <div class="scalp-header" onclick="toggleScalp('e')">
+            <div class="scalp-title">⚡ 5M 短线参考 <span style="color:var(--b3)">|</span> <span id="eScalpTs" style="color:var(--dim)">--</span></div>
+            <span class="scalp-toggle" id="eScalpToggle">▼</span>
+          </div>
+          <div id="eScalpBody">
+            <div class="scalp-row" id="eScalpChips"></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div id="eScalpBadge" class="scalp-badge wait">WAIT</div>
+              <div style="flex:1;min-width:100px;">
+                <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:3px;">短线置信度 <span id="eScalpConf" style="color:var(--text)">--%</span></div>
+                <div class="scalp-conf-bar"><div class="scalp-conf-fill" id="eScalpFill" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="scalp-levels" id="eScalpLevels"></div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:6px;line-height:1.5;" id="eScalpNote"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="full-card" id="fCard" style="display:none">
@@ -549,11 +664,11 @@ body {
     </div>
     <div class="data-grid">
       <div>
-        <div class="data-section-title"><span class="dot-btc">●</span> BTC 技术指标</div>
+        <div class="data-section-title"><span class="dot-btc">●</span> BTC 技术指标 <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">via OKX</span></div>
         <div class="table-wrap"><table class="dtbl"><thead><tr><th>指标名称</th><th>当前数值</th><th>信号</th></tr></thead><tbody id="bTb"><tr><td colspan="3" style="text-align:center;padding:20px;color:var(--dim)">加载中...</td></tr></tbody></table></div>
       </div>
       <div>
-        <div class="data-section-title"><span class="dot-eth">●</span> ETH 技术指标</div>
+        <div class="data-section-title"><span class="dot-eth">●</span> ETH 技术指标 <span style="font-size:9px;color:var(--dim);letter-spacing:1px;">via OKX</span></div>
         <div class="table-wrap"><table class="dtbl"><thead><tr><th>指标名称</th><th>当前数值</th><th>信号</th></tr></thead><tbody id="eTb"><tr><td colspan="3" style="text-align:center;padding:20px;color:var(--dim)">加载中...</td></tr></tbody></table></div>
       </div>
     </div>
@@ -569,10 +684,19 @@ body {
       <div class="stat-card pending"><div class="stat-label">待验证</div><div class="stat-val" id="hP" style="color:var(--gold)">0</div></div>
     </div>
     <div class="learn-hint">🧠 标记盈亏后系统自动学习，历史规律将注入下次分析，动态调整置信度与风险评分</div>
+    <div class="learn-progress" id="learnProgressWrap">
+      <div class="lp-label">🧠 学习进度</div>
+      <div class="lp-track"><div class="lp-fill" id="lpFill" style="width:0%"></div></div>
+      <div class="lp-count" id="lpCount">0 / 10</div>
+    </div>
     <div class="history-list" id="hList"></div>
-    <div style="margin-top:14px;text-align:right;">
+    <div class="history-actions">
+      <button class="export-btn" onclick="exportHistory()">↓ 导出 JSON</button>
+      <button class="import-btn" onclick="importHistory()">↑ 导入 JSON</button>
+      <div style="flex:1"></div>
       <button class="clear-btn" onclick="clearH()">清空所有记录</button>
     </div>
+    <input type="file" id="importInput" accept=".json" style="display:none" onchange="handleImport(this)">
   </div>
 
   <!-- Panel 4 -->
@@ -627,13 +751,28 @@ const T = {
 };
 
 const WINDOW_OPTIONS = [
-  { label: '4 小时',      val: 4 },
-  { label: '8 小时',      val: 8 },
-  { label: '12 小时',     val: 12 },
-  { label: '24 小时（默认）', val: 24 },
-  { label: '48 小时',     val: 48 },
-  { label: '72 小时',     val: 72 },
+  { label: '15 分钟',          val: 0.25 },
+  { label: '30 分钟',          val: 0.5  },
+  { label: '1 小时',           val: 1    },
+  { label: '2 小时',           val: 2    },
+  { label: '4 小时',           val: 4    },
+  { label: '8 小时',           val: 8    },
+  { label: '12 小时',          val: 12   },
+  { label: '24 小时（默认）',  val: 24   },
+  { label: '48 小时',          val: 48   },
+  { label: '72 小时',          val: 72   },
 ];
+
+// 短线参数（5m K线专用）
+const SCALP = {
+  TP1  : 0.004,  // 0.4%
+  TP2  : 0.008,  // 0.8%
+  SL   : 0.005,  // 0.5%
+  RSI_OS  : 38,
+  RSI_OB  : 62,
+  RSI_EXT_OS: 30,
+  RSI_EXT_OB: 70,
+};
 
 const PROXY_FNS = [
   u => u,
@@ -646,11 +785,13 @@ const defaultSettings = { checkWindowHours: 24 };
 let settings = { ...defaultSettings, ...safeParse(localStorage.getItem(SETTINGS_KEY), {}) };
 
 let state = {
-  running      : false,
-  countdown    : REFRESH_SEC,
-  history      : safeParse(localStorage.getItem(STORAGE_KEY), []),
-  lastBtcPrice : null,
-  lastEthPrice : null,
+  running         : false,
+  countdown       : REFRESH_SEC,
+  history         : safeParse(localStorage.getItem(STORAGE_KEY), []),
+  lastBtcPrice    : null,
+  lastEthPrice    : null,
+  lastRefreshTime : null,
+  refreshCooldown : 0,   // seconds remaining on manual refresh cooldown
 };
 
 /* ─────────── DOM 缓存（[FIX] 避免重复查询） ─────────── */
@@ -658,14 +799,16 @@ const DOM = {};
 function initDOM() {
   const ids = [
     'sDot','stTxt','clk','nxt','learnBadge','learnTxt','rBtn',
-    'pFill','errBar','errTxt',
+    'pFill','alertQueue','freshnessBar','freshnessDot','freshnessTxt',
     'mb0','mb0s','mb1','mb2','mb3','mb3s','mb4','mb4s',
     'bP','bC','bSig','bCf','bE','bT','bL','bRF','bRN','bInd','bInsight','bAt','bUl',
+    'bScalp','bScalpTs','bScalpToggle','bScalpBody','bScalpChips','bScalpBadge','bScalpConf','bScalpFill','bScalpLevels','bScalpNote',
     'eP','eC','eSig','eCf','eE','eT','eL','eRF','eRN','eInd','eInsight','eAt','eUl',
+    'eScalp','eScalpTs','eScalpToggle','eScalpBody','eScalpChips','eScalpBadge','eScalpConf','eScalpFill','eScalpLevels','eScalpNote',
     'fCard','fTxt','fgN','fgL','fgMk',
     'bTb','eTb',
-    'hTot','hWR','hW','hL','hP','hList',
-    'learnContent',
+    'hTot','hWR','hW','hL','hP','hList','learnProgressWrap','lpFill','lpCount',
+    'learnContent','importInput',
     'tab-signals','tab-data','tab-history','tab-learn',
   ];
   ids.forEach(id => { DOM[id] = document.getElementById(id); });
@@ -701,14 +844,32 @@ function setSt(txt, mode = 'ok') {
 }
 
 function showAlert(msg, type = 'warn') {
-  const bar = DOM['errBar'];
   const icons = { warn:'ℹ', err:'⚠', info:'🧠' };
-  bar.querySelector('.alert-icon').textContent = icons[type] || 'ℹ';
-  DOM['errTxt'].textContent = msg;
-  bar.className = `alert-bar on ${type}`;
-  clearTimeout(bar._t);
-  bar._t = setTimeout(() => { bar.className = 'alert-bar'; }, 12000);
+  const el = document.createElement('div');
+  el.className = `alert-bar on ${type}`;
+  el.innerHTML = `<span class="alert-icon">${icons[type]||'ℹ'}</span><span>${esc(msg)}</span>`;
+  const q = DOM['alertQueue'];
+  q.appendChild(el);
+  // keep at most 3 visible; remove oldest if over
+  while (q.children.length > 3) q.removeChild(q.firstChild);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 9000);
 }
+
+/* 数据新鲜度 */
+let _freshnessTimer = null;
+function updateFreshness() {
+  const bar = DOM['freshnessBar'];
+  if (!state.lastRefreshTime) { bar.style.display='none'; return; }
+  bar.style.display = 'flex';
+  const ageMs = Date.now() - state.lastRefreshTime;
+  const ageSec = Math.floor(ageMs / 1000);
+  const stale  = ageMs > 6 * 60 * 1000;  // >6 min = stale
+  bar.className = 'freshness-bar' + (stale ? ' stale' : '');
+  DOM['freshnessTxt'].textContent = stale
+    ? `⚠ 数据已 ${Math.floor(ageMs/60000)} 分钟未更新`
+    : `数据更新于 ${Math.floor(ageSec/60)}m ${ageSec%60}s 前`;
+}
+setInterval(updateFreshness, 10000);
 
 function setProgress(pct) {
   DOM['pFill'].style.width = Math.min(100, Math.max(0, pct)) + '%';
@@ -719,8 +880,34 @@ setInterval(() => {
   DOM['clk'].textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
 }, 1000);
 
-// [FIX] 只保留倒计时机制，移除冗余的 setInterval(fullRefresh, REFRESH_SEC*1000)
+/* ─────────── 30s 轻量价格轮询（仅用于 TP/SL 自动判定，不触发全量刷新） ─────────── */
+setInterval(async () => {
+  if (state.running || document.hidden) return;
+  const hasPending = state.history.some(s => s.outcome === 'pending');
+  if (!hasPending) return;
+  try {
+    const [btcTk, ethTk] = await Promise.all([
+      jFetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT'),
+      jFetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT'),
+    ]);
+    const bp = okxPrice(btcTk), ep = okxPrice(ethTk);
+    if (bp) state.lastBtcPrice = bp;
+    if (ep) state.lastEthPrice = ep;
+    checkPendingSignals(bp, ep);
+  } catch(e) { /* 静默失败，不影响主循环 */ }
+}, 30000);
+
+// 倒计时 + 手动刷新冷却
 setInterval(() => {
+  if (state.refreshCooldown > 0) {
+    state.refreshCooldown--;
+    if (state.refreshCooldown === 0) {
+      DOM['rBtn'].disabled = state.running;
+      DOM['rBtn'].textContent = '⟳ 立即刷新';
+    } else {
+      DOM['rBtn'].textContent = `⟳ 冷却 ${state.refreshCooldown}s`;
+    }
+  }
   if (document.hidden || state.running) return;
   state.countdown--;
   if (state.countdown <= 0) { fullRefresh(); return; }
@@ -845,12 +1032,53 @@ function calcEMA(vals, p) {
   return e;
 }
 
+function calcEMAFull(vals, p) {
+  // Returns array of EMA values (same length as vals, first p-1 items are null)
+  if (!Array.isArray(vals) || vals.length < p) return [];
+  const k = 2 / (p + 1);
+  const out = new Array(p - 1).fill(null);
+  let e = vals.slice(0, p).reduce((a, b) => a + b, 0) / p;
+  out.push(e);
+  for (let i = p; i < vals.length; i++) {
+    e = vals[i] * k + e * (1 - k);
+    out.push(e);
+  }
+  return out;
+}
+
 function calcMACD(closes) {
   if (!Array.isArray(closes) || closes.length < 26) return null;
   const s   = closes.slice(-60);
   const e12 = calcEMA(s, 12);
   const e26 = calcEMA(s, 26);
   return (e12 == null || e26 == null) ? null : parseFloat((e12 - e26).toFixed(4));
+}
+
+// Full MACD with signal line and histogram — for crossover detection
+function calcMACDFull(closes) {
+  if (!Array.isArray(closes) || closes.length < 35) return null;
+  const s    = closes.slice(-80);
+  const e12  = calcEMAFull(s, 12);
+  const e26  = calcEMAFull(s, 26);
+  // MACD line = EMA12 - EMA26 (only where both defined)
+  const macdLine = s.map((_, i) => (e12[i] != null && e26[i] != null) ? e12[i] - e26[i] : null).filter(v => v != null);
+  if (macdLine.length < 9) return null;
+  // Signal line = 9-period EMA of MACD line
+  const sigLine = calcEMA(macdLine, 9);
+  const macdVal = macdLine[macdLine.length - 1];
+  const prevMacd = macdLine[macdLine.length - 2];
+  const prevSig  = calcEMA(macdLine.slice(0, -1), 9);
+  const crossover = prevMacd !== null && prevSig !== null
+    ? (prevMacd < prevSig && macdVal > sigLine ? 'golden'
+     : prevMacd > prevSig && macdVal < sigLine ? 'death'
+     : 'none')
+    : 'none';
+  return {
+    macd    : parseFloat(macdVal.toFixed(4)),
+    signal  : parseFloat(sigLine.toFixed(4)),
+    hist    : parseFloat((macdVal - sigLine).toFixed(4)),
+    crossover,
+  };
 }
 
 function calcVolRatio(vols) {
@@ -862,14 +1090,16 @@ function calcVolRatio(vols) {
 
 /* ─────────── 信号分析引擎 ─────────── */
 function analyzeSignal(sym, coin, mkt, env) {
-  const rsi1h   = coin.rsi1h   ?? 50;
-  const rsi4h   = coin.rsi4h   ?? 50;
-  const macd1h  = coin.macd1h  ?? 0;
-  const macd4h  = coin.macd4h  ?? 0;
-  const volRatio= coin.volRatio ?? 1;
-  const funding = coin.funding  ?? 0;
-  const fg      = mkt.fg       ?? 50;
-  const chg24   = coin.chg24   ?? 0;
+  const rsi1h      = coin.rsi1h    ?? 50;
+  const rsi4h      = coin.rsi4h    ?? 50;
+  const macd1h     = coin.macd1h   ?? 0;
+  const macd4h     = coin.macd4h   ?? 0;
+  const mf1h       = coin.macdFull1h;   // { macd, signal, hist, crossover }
+  const mf15m      = coin.macdFull15m;
+  const volRatio   = coin.volRatio ?? 1;
+  const funding    = coin.funding  ?? 0;
+  const fg         = mkt.fg        ?? 50;
+  const chg24      = coin.chg24    ?? 0;
 
   let score = 0;
   const indicators = [];
@@ -895,14 +1125,31 @@ function analyzeSignal(sym, coin, mkt, env) {
   else if (rsi4h < T.RSI4_BEAR) addInd('RSI 15M', nv(rsi4h), 'bear', -0.3);
   else                           addInd('RSI 15M', nv(rsi4h), 'neut',  0);
 
-  // MACD
-  if      (macd1h > 0) addInd('MACD 1H', nv(macd1h, 1), 'bull',  1);
-  else if (macd1h < 0) addInd('MACD 1H', nv(macd1h, 1), 'bear', -1);
-  else                 addInd('MACD 1H', '0',            'neut',  0);
+  // MACD 1H — prefer crossover signal when available
+  if (mf1h) {
+    const cross = mf1h.crossover;
+    const label = cross==='golden' ? 'MACD 1H ↗' : cross==='death' ? 'MACD 1H ↘' : 'MACD 1H';
+    const pts   = cross==='golden' ? 1.5 : cross==='death' ? -1.5 : mf1h.macd>0 ? 0.8 : mf1h.macd<0 ? -0.8 : 0;
+    const sig   = cross==='golden'||mf1h.macd>0 ? 'bull' : cross==='death'||mf1h.macd<0 ? 'bear' : 'neut';
+    addInd(label, nv(mf1h.macd,1), sig, pts);
+  } else {
+    if      (macd1h > 0) addInd('MACD 1H', nv(macd1h, 1), 'bull',  1);
+    else if (macd1h < 0) addInd('MACD 1H', nv(macd1h, 1), 'bear', -1);
+    else                 addInd('MACD 1H', '0',            'neut',  0);
+  }
 
-  if      (macd4h > 0) addInd('MACD 15M', nv(macd4h, 1), 'bull',  0.5);
-  else if (macd4h < 0) addInd('MACD 15M', nv(macd4h, 1), 'bear', -0.5);
-  else                 addInd('MACD 15M', '0',            'neut',  0);
+  // MACD 15M
+  if (mf15m) {
+    const cross = mf15m.crossover;
+    const label = cross==='golden' ? 'MACD 15M ↗' : cross==='death' ? 'MACD 15M ↘' : 'MACD 15M';
+    const pts   = cross==='golden' ? 0.8 : cross==='death' ? -0.8 : mf15m.macd>0 ? 0.4 : mf15m.macd<0 ? -0.4 : 0;
+    const sig   = cross==='golden'||mf15m.macd>0 ? 'bull' : cross==='death'||mf15m.macd<0 ? 'bear' : 'neut';
+    addInd(label, nv(mf15m.macd,1), sig, pts);
+  } else {
+    if      (macd4h > 0) addInd('MACD 15M', nv(macd4h, 1), 'bull',  0.5);
+    else if (macd4h < 0) addInd('MACD 15M', nv(macd4h, 1), 'bear', -0.5);
+    else                 addInd('MACD 15M', '0',            'neut',  0);
+  }
 
   // 成交量
   if      (volRatio > T.VOL_HIGH) addInd('成交量', nv(volRatio,1)+'x', 'bull',  0.8);
@@ -978,7 +1225,10 @@ function analyzeSignal(sym, coin, mkt, env) {
   const fgTxt  = fg<25?'极度恐慌':fg<45?'恐慌':fg<55?'中性':fg<75?'贪婪':'极度贪婪';
   const rsiTxt = rsi1h<30?'严重超卖':rsi1h>70?'严重超买':rsi1h>55?'偏强':rsi1h<45?'偏弱':'中性';
   const sigTxt = signal==='LONG'?'做多':signal==='SHORT'?'做空':'观望';
-  const analysis = `综合评分 ${score>=0?'+':''}${score.toFixed(1)} → ${sigTxt}信号。RSI(1H) ${nv(rsi1h)} 处于${rsiTxt}，MACD ${macd1h>0?'金叉看涨':'死叉看跌'}，成交量 ${nv(volRatio,1)}倍均值，资金费率 ${nv(funding,4)}%。市场情绪 ${fg}（${fgTxt}），当前置信度 ${confidence}%，风险评分 ${risk_score}/100。`;
+  const macdDesc = mf1h
+    ? (mf1h.crossover==='golden'?'1H金叉↗':mf1h.crossover==='death'?'1H死叉↘':mf1h.macd>0?'1H多头':'1H空头')
+    : (macd1h>0?'看涨':'看跌');
+  const analysis = `综合评分 ${score>=0?'+':''}${score.toFixed(1)} → ${sigTxt}信号。RSI(1H) ${nv(rsi1h)} 处于${rsiTxt}，MACD ${macdDesc}，成交量 ${nv(volRatio,1)}倍均值，资金费率 ${nv(funding,4)}%。市场情绪 ${fg}（${fgTxt}），置信度 ${confidence}%，风险评分 ${risk_score}/100。`;
 
   return { signal, confidence, entry, tp1, tp2, sl, risk_score, analysis, indicators };
 }
@@ -997,6 +1247,57 @@ async function runAI(d) {
   const fgTxt  = d.mkt.fg<25?'极度恐慌':d.mkt.fg<45?'恐慌':d.mkt.fg<55?'中性':d.mkt.fg<75?'贪婪':'极度贪婪';
   const full_analysis = `当前市场情绪指数 ${d.mkt.fg??'--'}（${fgTxt}），BTC 市值占比 ${d.mkt.dom?d.mkt.dom+'%':'--'}，加密总市值 ${d.mkt.cap?'$'+(d.mkt.cap/1e12).toFixed(2)+'T':'--'}。\n\nBTC 方面：${btcSig.analysis}\n\nETH 方面：${ethSig.analysis}\n\n请严格执行止损策略，合约交易高风险，仓位不宜过重。`;
   return { result:{ btc:btcSig, eth:ethSig, full_analysis }, btcEnv, ethEnv };
+}
+
+/* ─────────── 学习进度 ─────────── */
+function updateLearnProgress() {
+  const verified = state.history.filter(s => s.outcome !== 'pending').length;
+  const pct = Math.min(100, (verified / MIN_SIGNALS_FOR_REPORT) * 100);
+  const wrap = DOM['learnProgressWrap'];
+  if (!wrap) return;
+  DOM['lpFill'].style.width = pct + '%';
+  DOM['lpCount'].textContent = verified >= MIN_SIGNALS_FOR_REPORT
+    ? `✓ ${verified} 条`
+    : `${verified} / ${MIN_SIGNALS_FOR_REPORT}`;
+  DOM['learnBadge'].style.display = verified >= 5 ? 'flex' : 'none';
+  if (verified >= 5) DOM['learnTxt'].textContent = `学习 ${verified}条`;
+}
+
+/* ─────────── 导出 / 导入 ─────────── */
+function exportHistory() {
+  const data = { version: 'bgsig_v5', exported: new Date().toISOString(), records: state.history };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bgsig_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showAlert(`已导出 ${state.history.length} 条记录`, 'info');
+}
+function importHistory() { DOM['importInput'].click(); }
+function handleImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const records = Array.isArray(parsed) ? parsed : (parsed.records ?? null);
+      if (!Array.isArray(records)) throw new Error('格式错误');
+      const merged = [...records, ...state.history];
+      // dedup by id
+      const seen = new Set();
+      state.history = merged.filter(s => { if (seen.has(s.id)) return false; seen.add(s.id); return true; }).slice(0, MAX_HISTORY);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
+      renderHistory();
+      updateLearnProgress();
+      showAlert(`已导入 ${records.length} 条记录（去重合并）`, 'info');
+    } catch(err) {
+      showAlert('导入失败：' + err.message, 'err');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 /* ─────────── 学习报告 ─────────── */
@@ -1070,48 +1371,125 @@ async function fetchFearGreed() {
   return null;
 }
 
+/* ─────────── OKX 行情解析工具 ─────────── */
+
+// OKX ticker → 价格 / 24H 数据
+// 响应格式: { code:"0", data:[{ last, open24h, high24h, low24h, vol24h, ts, ... }] }
+const okxPrice = raw => raw?.data?.[0]?.last   ? parseFloat(raw.data[0].last)   : null;
+const okxHi24  = raw => raw?.data?.[0]?.high24h ? parseFloat(raw.data[0].high24h) : null;
+const okxLo24  = raw => raw?.data?.[0]?.low24h  ? parseFloat(raw.data[0].low24h)  : null;
+const okxChg24 = raw => {
+  if (!raw?.data?.[0]) return null;
+  const last  = parseFloat(raw.data[0].last);
+  const open  = parseFloat(raw.data[0].open24h);
+  return open ? parseFloat(((last - open) / open * 100).toFixed(3)) : null;
+};
+
+// OKX candles → close/vol 数组（升序，供 RSI/MACD 计算）
+// OKX 返回降序（最新在前），需 reverse
+// 格式: data[ [ts, open, high, low, close, vol, volCcy, ...], ... ]
+const okxCloses = raw => {
+  if (!raw?.data || !Array.isArray(raw.data)) return [];
+  return [...raw.data].reverse().map(k => parseFloat(k[4]));
+};
+const okxVols = raw => {
+  if (!raw?.data || !Array.isArray(raw.data)) return [];
+  return [...raw.data].reverse().map(k => parseFloat(k[5]));
+};
+
+// OKX funding rate
+// 格式: { code:"0", data:[{ fundingRate:"0.0001", ... }] }
+const okxFund = raw => {
+  if (!raw?.data?.[0]?.fundingRate) return null;
+  return parseFloat((parseFloat(raw.data[0].fundingRate) * 100).toFixed(4));
+};
+
+/* ─────────── 主数据抓取（OKX 行情 + CoinGecko 全局） ─────────── */
 async function fetchAll() {
   setSt('获取数据中', 'warn');
   setProgress(5);
-  const cgPrices = await jFetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true&include_high_24h=true&include_low_24h=true&include_24hr_vol=true');
-  setProgress(15);
-  const [fgRaw, bK1, eK1, bK4, eK4, cgGlob, bFund, eFund] = await Promise.all([
-    fetchFearGreed(),
-    jFetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100'),
-    jFetch('https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100'),
-    jFetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=120'),
-    jFetch('https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=15m&limit=120'),
-    jFetch('https://api.coingecko.com/api/v3/global'),
-    jFetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1'),
-    jFetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=1'),
+
+  // OKX Spot Ticker — 价格、24H 高低、涨跌
+  const [btcTk, ethTk] = await Promise.all([
+    jFetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT'),
+    jFetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT'),
   ]);
-  setProgress(45);
+  setProgress(20);
 
-  const closes = kl => Array.isArray(kl) ? kl.map(k => parseFloat(k[4])) : [];
-  const vols   = kl => Array.isArray(kl) ? kl.map(k => parseFloat(k[5])) : [];
-  const fund   = raw => (!Array.isArray(raw) || !raw[0]?.fundingRate) ? null : parseFloat((parseFloat(raw[0].fundingRate)*100).toFixed(4));
+  // 并行拉取：恐惧贪婪 + OKX K线 + CoinGecko 全局 + OKX 资金费率 + 5M K线
+  const [fgRaw, bK1, eK1, bK15, eK15, cgGlob, bFund, eFund, bK5, eK5] = await Promise.all([
+    fetchFearGreed(),
+    // 1H K线（用于 RSI 1H / MACD 1H / 成交量比率）
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=BTC-USDT&bar=1H&limit=100'),
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=ETH-USDT&bar=1H&limit=100'),
+    // 15M K线（用于 RSI 15M / MACD 15M）
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=BTC-USDT&bar=15m&limit=120'),
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=ETH-USDT&bar=15m&limit=120'),
+    // CoinGecko 全局（BTC 占比 + 总市值）— OKX 无此数据
+    jFetch('https://api.coingecko.com/api/v3/global'),
+    // OKX 永续合约资金费率（USDT 本位）
+    jFetch('https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP'),
+    jFetch('https://www.okx.com/api/v5/public/funding-rate?instId=ETH-USDT-SWAP'),
+    // 5M K线（短线参考，取80根覆盖约6.7小时）
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=BTC-USDT&bar=5m&limit=80'),
+    jFetch('https://www.okx.com/api/v5/market/candles?instId=ETH-USDT&bar=5m&limit=80'),
+  ]);
+  setProgress(50);
 
-  const btcCG = cgPrices?.bitcoin ?? {};
-  const ethCG = cgPrices?.ethereum ?? {};
+  const bC1 = okxCloses(bK1), eC1 = okxCloses(eK1);
+  const bC15= okxCloses(bK15), eC15= okxCloses(eK15);
+  const bC5 = okxCloses(bK5),  eC5 = okxCloses(eK5);
+  const bV5 = okxVols(bK5),    eV5 = okxVols(eK5);
   const data = {
     btc: {
-      price: btcCG.usd ?? null, chg24: btcCG.usd_24h_change ?? null,
-      hi24: btcCG.usd_24h_high ?? null, lo24: btcCG.usd_24h_low ?? null,
-      rsi1h: calcRSI(closes(bK1)), rsi4h: calcRSI(closes(bK4)),
-      macd1h: calcMACD(closes(bK1)), macd4h: calcMACD(closes(bK4)),
-      volRatio: calcVolRatio(vols(bK1)), funding: fund(bFund),
+      price:       okxPrice(btcTk),
+      chg24:       okxChg24(btcTk),
+      hi24:        okxHi24(btcTk),
+      lo24:        okxLo24(btcTk),
+      rsi1h:       calcRSI(bC1),
+      rsi4h:       calcRSI(bC15),
+      macd1h:      calcMACD(bC1),
+      macd4h:      calcMACD(bC15),
+      macdFull1h:  calcMACDFull(bC1),
+      macdFull15m: calcMACDFull(bC15),
+      volRatio:    calcVolRatio(okxVols(bK1)),
+      funding:     okxFund(bFund),
+      // 5M 短线数据
+      rsi5m:       calcRSI(bC5, 9),       // 短周期用9期RSI更敏感
+      macdFull5m:  calcMACDFull(bC5),
+      volRatio5m:  calcVolRatio(bV5),
+      hi5m20:      bC5.length >= 4 ? Math.max(...bC5.slice(-20)) : null,
+      lo5m20:      bC5.length >= 4 ? Math.min(...bC5.slice(-20)) : null,
+      closes5m:    bC5,
     },
     eth: {
-      price: ethCG.usd ?? null, chg24: ethCG.usd_24h_change ?? null,
-      hi24: ethCG.usd_24h_high ?? null, lo24: ethCG.usd_24h_low ?? null,
-      rsi1h: calcRSI(closes(eK1)), rsi4h: calcRSI(closes(eK4)),
-      macd1h: calcMACD(closes(eK1)), macd4h: calcMACD(closes(eK4)),
-      volRatio: calcVolRatio(vols(eK1)), funding: fund(eFund),
+      price:       okxPrice(ethTk),
+      chg24:       okxChg24(ethTk),
+      hi24:        okxHi24(ethTk),
+      lo24:        okxLo24(ethTk),
+      rsi1h:       calcRSI(eC1),
+      rsi4h:       calcRSI(eC15),
+      macd1h:      calcMACD(eC1),
+      macd4h:      calcMACD(eC15),
+      macdFull1h:  calcMACDFull(eC1),
+      macdFull15m: calcMACDFull(eC15),
+      volRatio:    calcVolRatio(okxVols(eK1)),
+      funding:     okxFund(eFund),
+      // 5M 短线数据
+      rsi5m:       calcRSI(eC5, 9),
+      macdFull5m:  calcMACDFull(eC5),
+      volRatio5m:  calcVolRatio(eV5),
+      hi5m20:      eC5.length >= 4 ? Math.max(...eC5.slice(-20)) : null,
+      lo5m20:      eC5.length >= 4 ? Math.min(...eC5.slice(-20)) : null,
+      closes5m:    eC5,
     },
     mkt: {
-      fg: fgRaw?.value ?? null, fgLbl: fgRaw?.label ?? null, fgDerived: fgRaw?.derived ?? false,
-      dom: cgGlob?.data?.market_cap_percentage?.btc != null ? parseFloat(cgGlob.data.market_cap_percentage.btc).toFixed(1) : null,
-      cap: cgGlob?.data?.total_market_cap?.usd ?? null,
+      fg:        fgRaw?.value ?? null,
+      fgLbl:     fgRaw?.label ?? null,
+      fgDerived: fgRaw?.derived ?? false,
+      dom:       cgGlob?.data?.market_cap_percentage?.btc != null
+                   ? parseFloat(cgGlob.data.market_cap_percentage.btc).toFixed(1) : null,
+      cap:       cgGlob?.data?.total_market_cap?.usd ?? null,
     },
   };
 
@@ -1119,8 +1497,8 @@ async function fetchAll() {
   if (!data.btc.price) missing.push('BTC价格');
   if (!data.eth.price) missing.push('ETH价格');
   if (!data.btc.rsi1h) missing.push('K线数据');
-  if (missing.length)       showAlert('部分数据不可用：' + missing.join('、'), 'warn');
-  if (data.mkt.fgDerived)   showAlert('恐惧贪婪指数为估算值', 'warn');
+  if (missing.length)     showAlert('OKX 部分数据不可用：' + missing.join('、'), 'warn');
+  if (data.mkt.fgDerived) showAlert('恐惧贪婪指数为估算值', 'warn');
   return data;
 }
 
@@ -1186,8 +1564,8 @@ function updTables(d) {
       ['RSI 1H',    nv(x.rsi1h),   rsiSig(x.rsi1h)],
       ['RSI 状态',  rsiLbl(x.rsi1h), rsiSig(x.rsi1h)],
       ['RSI 15M',    nv(x.rsi4h),   rsiSig(x.rsi4h)],
-      ['MACD 1H',   x.macd1h!=null ? String(x.macd1h) : '--', x.macd1h==null?'neut':x.macd1h>0?'bull':'bear'],
-      ['MACD 15M',   x.macd4h!=null ? String(x.macd4h) : '--', x.macd4h==null?'neut':x.macd4h>0?'bull':'bear'],
+      ['MACD 1H',  x.macdFull1h  ? `${x.macdFull1h.macd} / 信号线 ${x.macdFull1h.signal}${x.macdFull1h.crossover!=='none'?' ⚡':''}` : (x.macd1h!=null?String(x.macd1h):'--'), x.macdFull1h?(x.macdFull1h.crossover==='golden'||x.macdFull1h.macd>0?'bull':'bear'):(x.macd1h==null?'neut':x.macd1h>0?'bull':'bear')],
+      ['MACD 15M', x.macdFull15m ? `${x.macdFull15m.macd} / 信号线 ${x.macdFull15m.signal}${x.macdFull15m.crossover!=='none'?' ⚡':''}` : (x.macd4h!=null?String(x.macd4h):'--'), x.macdFull15m?(x.macdFull15m.crossover==='golden'||x.macdFull15m.macd>0?'bull':'bear'):(x.macd4h==null?'neut':x.macd4h>0?'bull':'bear')],
       ['成交量比率', x.volRatio!=null ? x.volRatio+'x' : '--', x.volRatio>1.5?'bull':x.volRatio<0.6?'bear':'neut'],
       ['资金费率',   x.funding!=null ? x.funding+'%'  : '--', fSig(x.funding)],
     ];
@@ -1349,7 +1727,7 @@ function renderHistory() {
         ${WINDOW_OPTIONS.map(o=>`<option value="${o.val}"${settings.checkWindowHours===o.val?' selected':''}>${esc(o.label)}</option>`).join('')}
       </select>
       <div style="font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5;flex:2;min-width:200px;">
-        开仓后 <span style="color:var(--gold)">${settings.checkWindowHours}h</span> 内触及止盈1 → 胜；触及止损 → 负；到期未达 → 负
+        开仓后 <span style="color:var(--gold)">${settings.checkWindowHours < 1 ? Math.round(settings.checkWindowHours*60)+'分钟' : settings.checkWindowHours+'小时'}</span> 内触及止盈1 → 胜；触及止损 → 负；到期未达 → 负
       </div>
     </div>`;
 
@@ -1417,8 +1795,8 @@ function renderHistory() {
           </div>
           <div class="outcome-btns" style="align-items:flex-start;flex-direction:column;gap:5px;">
             <div style="display:flex;gap:5px;">
-              <button class="out-btn win${s.outcome==='win'?' sel':''}"  onclick="setOutcome('${esc(s.id)}','win')">✓ 盈</button>
-              <button class="out-btn loss${s.outcome==='loss'?' sel':''}" onclick="setOutcome('${esc(s.id)}','loss')">✗ 亏</button>
+              <button class="out-btn win${s.outcome==='win'?' sel':''}"  data-sig-id="${esc(s.id)}" onclick="setOutcome('${esc(s.id)}','win')">✓ 盈</button>
+              <button class="out-btn loss${s.outcome==='loss'?' sel':''}" data-sig-id="${esc(s.id)}" onclick="setOutcome('${esc(s.id)}','loss')">✗ 亏</button>
             </div>
             ${autoTag}
           </div>
@@ -1437,7 +1815,26 @@ function setOutcome(id, outcome) {
   sig.outcome = outcome;
   sig.autoResolved = false;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.history));
-  renderHistory();
+  // Partial update: only refresh outcome buttons + stats row (keep scroll position)
+  const allBtns = DOM['hList'].querySelectorAll(`[data-sig-id="${CSS.escape(id)}"]`);
+  allBtns.forEach(btn => {
+    const isWin = btn.classList.contains('win');
+    const isLoss = btn.classList.contains('loss');
+    btn.classList.toggle('sel', (isWin && outcome==='win') || (isLoss && outcome==='loss'));
+  });
+  // Refresh stat counters
+  const W = state.history.filter(s=>s.outcome==='win').length;
+  const L = state.history.filter(s=>s.outcome==='loss').length;
+  const P = state.history.filter(s=>s.outcome==='pending').length;
+  const T2= W + L;
+  const wr= T2>0 ? ((W/T2)*100).toFixed(1)+'%' : '--%';
+  DOM['hTot'].textContent = state.history.length;
+  DOM['hWR'].textContent  = wr;
+  DOM['hWR'].style.color  = T2===0?'var(--dim)':parseFloat(wr)>=55?'var(--long)':parseFloat(wr)>=45?'var(--gold)':'var(--short)';
+  DOM['hW'].textContent   = W;
+  DOM['hL'].textContent   = L;
+  DOM['hP'].textContent   = P;
+  updateLearnProgress();
 }
 
 function changeWindow(val) {
@@ -1491,9 +1888,131 @@ async function renderLearnPanel() {
     </div>`;
 }
 
+/* ─────────── 短线分析引擎（5M K线） ─────────── */
+function analyzeScalp(sym, coin) {
+  const rsi   = coin.rsi5m     ?? 50;
+  const mf    = coin.macdFull5m;
+  const volR  = coin.volRatio5m ?? 1;
+  const price = coin.price     ?? 0;
+  const isEth = sym === 'eth';
+  const rd    = v => isEth ? parseFloat(v.toFixed(2)) : Math.round(v);
+
+  const chips = [];
+  let score   = 0;
+
+  // RSI 9期
+  const rsiSig = rsi < SCALP.RSI_EXT_OS ? 'bull' : rsi > SCALP.RSI_EXT_OB ? 'bear'
+               : rsi < SCALP.RSI_OS     ? 'bull' : rsi > SCALP.RSI_OB     ? 'bear' : 'neut';
+  const rsiPts = rsi < SCALP.RSI_EXT_OS ? 3 : rsi > SCALP.RSI_EXT_OB ? -3
+               : rsi < SCALP.RSI_OS     ? 2 : rsi > SCALP.RSI_OB     ? -2 : 0;
+  const rsiLbl = rsi < SCALP.RSI_EXT_OS ? '极超卖' : rsi > SCALP.RSI_EXT_OB ? '极超买'
+               : rsi < SCALP.RSI_OS     ? '超卖'  : rsi > SCALP.RSI_OB     ? '超买' : '中性';
+  chips.push({ label: `RSI9 ${nv(rsi)} ${rsiLbl}`, sig: rsiSig });
+  score += rsiPts;
+
+  // MACD 5M 金叉/死叉
+  if (mf) {
+    const cross = mf.crossover;
+    const macdSig = cross === 'golden' ? 'bull' : cross === 'death' ? 'bear' : mf.macd > 0 ? 'bull' : mf.macd < 0 ? 'bear' : 'neut';
+    const macdPts = cross === 'golden' ? 2.5 : cross === 'death' ? -2.5 : mf.macd > 0 ? 1 : mf.macd < 0 ? -1 : 0;
+    const macdLbl = cross === 'golden' ? 'MACD ↗金叉' : cross === 'death' ? 'MACD ↘死叉' : mf.macd > 0 ? 'MACD 多头' : 'MACD 空头';
+    chips.push({ label: macdLbl, sig: macdSig });
+    score += macdPts;
+  }
+
+  // 成交量
+  if (volR > 2.0)      { chips.push({ label: `量 ${nv(volR,1)}x 放量`, sig:'bull' }); score += 1.5; }
+  else if (volR > 1.4) { chips.push({ label: `量 ${nv(volR,1)}x 温和`, sig:'bull' }); score += 0.5; }
+  else if (volR < 0.5) { chips.push({ label: `量 ${nv(volR,1)}x 缩量`, sig:'bear' }); score -= 0.5; }
+  else                  { chips.push({ label: `量 ${nv(volR,1)}x 正常`, sig:'neut' }); }
+
+  // 近20根K线价格位置（突破高点/接近低点）
+  const hi20 = coin.hi5m20, lo20 = coin.lo5m20;
+  if (price && hi20 && lo20) {
+    const range = hi20 - lo20;
+    const pos   = range > 0 ? (price - lo20) / range : 0.5;
+    if (pos > 0.88)      { chips.push({ label: '近高位', sig:'bear' }); score -= 0.8; }
+    else if (pos < 0.12) { chips.push({ label: '近低位', sig:'bull' }); score += 0.8; }
+    else if (pos > 0.7)  { chips.push({ label: '偏强势', sig:'bull' }); score += 0.3; }
+    else if (pos < 0.3)  { chips.push({ label: '偏弱势', sig:'bear' }); score -= 0.3; }
+  }
+
+  // 判定方向
+  let dir, baseConf;
+  if      (score >=  3)  { dir = 'LONG';  baseConf = 75; }
+  else if (score >=  1.5){ dir = 'LONG';  baseConf = 60; }
+  else if (score <= -3)  { dir = 'SHORT'; baseConf = 75; }
+  else if (score <= -1.5){ dir = 'SHORT'; baseConf = 60; }
+  else                    { dir = 'WAIT';  baseConf = 40; }
+
+  const confidence = Math.round(Math.max(30, Math.min(90, baseConf)));
+
+  // TP/SL（短线，比例极小）
+  const tp1 = rd(price * (1 + (dir==='LONG'?1:-1) * SCALP.TP1));
+  const tp2 = rd(price * (1 + (dir==='LONG'?1:-1) * SCALP.TP2));
+  const sl  = rd(price * (1 + (dir==='LONG'?-1:1) * SCALP.SL));
+
+  // 一句话描述
+  const dirTxt = dir==='LONG'?'偏多':dir==='SHORT'?'偏空':'观望';
+  const note = `综合5M得分 ${score>=0?'+':''}${score.toFixed(1)}，${dirTxt}。TP目标 ±${(SCALP.TP1*100).toFixed(1)}%/${(SCALP.TP2*100).toFixed(1)}%，止损 ${(SCALP.SL*100).toFixed(1)}%。此为短线快速参考，需结合主信号方向使用。`;
+
+  return { dir, confidence, score, chips, tp1, tp2, sl, note };
+}
+
+function renderScalpPanel(pfx, sym, coin) {
+  const panelEl = DOM[pfx+'Scalp'];
+  if (!panelEl) return;
+  if (!coin.rsi5m) { panelEl.style.display = 'none'; return; }
+
+  const sc   = analyzeScalp(sym, coin);
+  const isEth= sym === 'eth';
+  const now  = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+
+  panelEl.style.display = 'block';
+  DOM[pfx+'ScalpTs'].textContent = now;
+
+  // badge
+  const badge = DOM[pfx+'ScalpBadge'];
+  badge.textContent = sc.dir;
+  badge.className   = 'scalp-badge ' + sc.dir.toLowerCase();
+
+  // confidence bar
+  DOM[pfx+'ScalpConf'].textContent = sc.confidence + '%';
+  const fillEl = DOM[pfx+'ScalpFill'];
+  fillEl.style.width = sc.confidence + '%';
+  fillEl.style.background = sc.dir==='LONG'?'var(--long)':sc.dir==='SHORT'?'var(--short)':'var(--neut)';
+
+  // chips
+  DOM[pfx+'ScalpChips'].innerHTML = sc.chips.map(c =>
+    `<div class="scalp-chip ${c.sig}">${c.label}</div>`
+  ).join('');
+
+  // levels
+  if (sc.dir !== 'WAIT') {
+    DOM[pfx+'ScalpLevels'].innerHTML = `
+      <div class="scalp-level"><div class="scalp-level-lbl">入场</div><div class="scalp-level-val" style="color:var(--gold)">${fmtP(coin.price,isEth)}</div></div>
+      <div class="scalp-level"><div class="scalp-level-lbl">止盈1 (+${(SCALP.TP1*100).toFixed(1)}%)</div><div class="scalp-level-val" style="color:var(--long)">${fmtP(sc.tp1,isEth)}</div></div>
+      <div class="scalp-level"><div class="scalp-level-lbl">止盈2 (+${(SCALP.TP2*100).toFixed(1)}%)</div><div class="scalp-level-val" style="color:var(--long)">${fmtP(sc.tp2,isEth)}</div></div>
+      <div class="scalp-level"><div class="scalp-level-lbl">止损 (-${(SCALP.SL*100).toFixed(1)}%)</div><div class="scalp-level-val" style="color:var(--short)">${fmtP(sc.sl,isEth)}</div></div>`;
+  } else {
+    DOM[pfx+'ScalpLevels'].innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--dim)">信号不明确，暂不生成目标价位</div>`;
+  }
+
+  DOM[pfx+'ScalpNote'].textContent = sc.note;
+}
+
+// 展开/折叠短线面板
+const _scalpCollapsed = {};
+function toggleScalp(pfx) {
+  _scalpCollapsed[pfx] = !_scalpCollapsed[pfx];
+  DOM[pfx+'ScalpBody'].style.display   = _scalpCollapsed[pfx] ? 'none' : 'block';
+  DOM[pfx+'ScalpToggle'].textContent   = _scalpCollapsed[pfx] ? '▶' : '▼';
+}
+
 /* ─────────── 主刷新 ─────────── */
-async function fullRefresh() {
+async function fullRefresh(manual = false) {
   if (state.running) return;
+  if (manual && state.refreshCooldown > 0) return;
   state.running = true;
   DOM['rBtn'].disabled = true;
   DOM['learnBadge'].style.display = 'none';
@@ -1514,6 +2033,8 @@ async function fullRefresh() {
     updTables(d);
     renderCard('btc', aiResult.result.btc, aiResult.btcEnv, d);
     renderCard('eth', aiResult.result.eth, aiResult.ethEnv, d);
+    renderScalpPanel('b', 'btc', d.btc);
+    renderScalpPanel('e', 'eth', d.eth);
 
     if (aiResult.result.full_analysis) {
       DOM['fCard'].style.display = 'block';
@@ -1525,6 +2046,9 @@ async function fullRefresh() {
 
     setSt('分析完成 ✓', 'ok');
     state.countdown = REFRESH_SEC;
+    state.lastRefreshTime = Date.now();
+    updateFreshness();
+    updateLearnProgress();
     setProgress(100);
     setTimeout(() => setProgress(0), 1500);
 
@@ -1534,16 +2058,19 @@ async function fullRefresh() {
     showAlert('分析过程出错，请稍后重试', 'err');
   } finally {
     state.running = false;
-    DOM['rBtn'].disabled = false;
+    if (manual) {
+      state.refreshCooldown = 10;
+    } else {
+      DOM['rBtn'].disabled = false;
+    }
   }
 }
 
 /* ─────────── 启动 ─────────── */
 window.addEventListener('load', () => {
-  initDOM();   // 缓存 DOM 引用
+  initDOM();
+  updateLearnProgress();
   fullRefresh();
-  // [FIX] 移除了原来冗余的 setInterval(fullRefresh, REFRESH_SEC*1000)
-  // 自动刷新由上方的倒计时 setInterval 统一管理
 });
 </script>
 </body>
