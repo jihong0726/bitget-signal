@@ -557,6 +557,21 @@ body {
 .news-action-btn:hover { border-color:var(--gold); color:var(--gold); }
 .news-action-btn:disabled { opacity:.4; cursor:not-allowed; }
 .news-source-note { font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:16px;line-height:1.8;padding:10px 14px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--radius-sm); }
+/* ── 逐条新闻影响评分 ── */
+.news-card.has-impact { border-left:3px solid var(--b3); }
+.news-card.impact-bull { border-left-color:#16a34a; }
+.news-card.impact-bear { border-left-color:var(--red); }
+.ni-impact-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:7px; }
+.ni-impact-badge { padding:2px 8px; border-radius:3px; font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:0.5px; }
+.ni-impact-badge.bull { color:#16a34a; background:rgba(22,163,74,.12); border:1px solid rgba(22,163,74,.25); }
+.ni-impact-badge.bear { color:var(--red); background:rgba(246,70,93,.1); border:1px solid rgba(246,70,93,.25); }
+.ni-impact-badge.neut { color:var(--dim); background:var(--s2); border:1px solid var(--b2); }
+.ni-asset-score { font-family:var(--mono); font-size:9px; padding:2px 6px; border-radius:3px; background:var(--s2); border:1px solid var(--b1); color:var(--dim); }
+.ni-impact-reason { font-family:var(--mono); font-size:9px; color:var(--dim); opacity:.7; }
+.ni-mag-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.ni-mag-dot.high   { background:#16a34a; box-shadow:0 0 4px #16a34a66; }
+.ni-mag-dot.medium { background:var(--gold); }
+.ni-mag-dot.low    { background:var(--dim); }
 /* ─────────── 新闻影响面板 (signals tab) ─────────── */
 .ni-card { background:var(--s1); border:1px solid var(--b2); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; }
 .ni-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -2503,23 +2518,37 @@ async function fetchMacroNews(limit = 8) {
   return { articles: null, source: '' };
 }
 
-function renderNewsSection(articles, tag, tagCls, emptyMsg) {
+function renderNewsSection(articles, tag, tagCls, emptyMsg, filterByImpact = false) {
   if (!articles || !articles.length) {
     return `<div class="news-empty" style="padding:14px">${esc(emptyMsg)}</div>`;
   }
-  return articles.map(a => {
-    const title  = esc(a.title || a.url || '--');
-    const url    = esc(a.url || '#');
-    const date   = fmtNewsDate(a.seendate);
-    const domain = esc(a.domain || '');
-    const country= esc(a.sourcecountry || '');
-    return `<div class="news-card">
+  // 每条评分
+  let scored = articles.map(a => ({ ...a, impact: scoreArticleImpact(a.title) }));
+  // 宏观新闻：过滤掉与 BTC/ETH 无关的条目
+  if (filterByImpact) {
+    scored = scored.filter(a => a.impact.mag !== 'none');
+    if (!scored.length) {
+      return `<div class="news-empty" style="padding:14px">当前宏观新闻中无对 BTC/ETH 有明确影响的条目（已过滤 ${articles.length} 条无关新闻）</div>`;
+    }
+  }
+  // 按影响程度降序排列
+  const magOrder = { high: 3, medium: 2, low: 1, none: 0 };
+  scored.sort((a, b) => magOrder[b.impact.mag] - magOrder[a.impact.mag]);
+
+  return scored.map(a => {
+    const title   = esc(a.title || a.url || '--');
+    const url     = esc(a.url || '#');
+    const date    = fmtNewsDate(a.seendate);
+    const domain  = esc(a.domain || '');
+    const impCls  = a.impact.mag !== 'none' ? ` has-impact impact-${a.impact.dir}` : '';
+    const impHtml = renderImpactBadge(a.impact);
+    return `<div class="news-card${impCls}">
+      ${impHtml}
       <div class="news-card-title"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></div>
       <div class="news-meta">
         <span class="news-tag ${tagCls}">${tag}</span>
         <span>${date}</span>
         ${domain ? `<span>${domain}</span>` : ''}
-        ${country ? `<span style="opacity:.6">${country}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -2554,9 +2583,9 @@ async function loadNews(manual = false) {
 
     contentEl.innerHTML =
       `<div class="news-section-hdr">加密市场相关新闻${cryptoSrc ? ' · via ' + cryptoSrc : ''}</div>` +
-      renderNewsSection(cryptoArticles, 'CRYPTO', 'crypto', cryptoEmpty) +
-      `<div class="news-section-hdr" style="margin-top:24px;">宏观经济事件${macroSrc ? ' · via ' + macroSrc : ''}</div>` +
-      renderNewsSection(macroArticles, 'MACRO', 'macro', macroEmpty) +
+      renderNewsSection(cryptoArticles, 'CRYPTO', 'crypto', cryptoEmpty, false) +
+      `<div class="news-section-hdr" style="margin-top:24px;">宏观经济事件（仅显示影响 BTC/ETH 的条目）${macroSrc ? ' · via ' + macroSrc : ''}</div>` +
+      renderNewsSection(macroArticles, 'MACRO', 'macro', macroEmpty, true) +
       `<div class="news-source-note">
         📡 数据来源：CoinTelegraph · CoinDesk · Decrypt · BBC Business · Reuters（RSS · 按可用性自动切换）<br>
         ⚠ 新闻仅供参考，不构成投资建议。请结合主信号方向综合判断入场时机。
@@ -2577,7 +2606,131 @@ async function loadNews(manual = false) {
   }
 }
 
-/* ─────────── 新闻影响分析 ─────────── */
+/* ─────────── 逐条新闻影响评分引擎 ─────────── */
+// 格式: [关键词, 方向, BTC分, ETH分, 中文标签]
+const IMPACT_RULES = [
+  // ── 强烈利多 BTC+ETH ──
+  ['spot bitcoin etf',    'bull',  3.0,  1.5, 'BTC现货ETF'],
+  ['bitcoin etf approved','bull',  3.0,  1.5, 'ETF批准'],
+  ['etf approval',        'bull',  2.5,  1.5, 'ETF批准'],
+  ['etf approved',        'bull',  2.5,  1.5, 'ETF批准'],
+  ['bitcoin etf',         'bull',  2.0,  0.8, 'BTC ETF'],
+  ['strategic reserve',   'bull',  2.5,  1.0, '国家战略储备'],
+  ['bitcoin reserve',     'bull',  2.5,  1.0, 'BTC国家储备'],
+  ['fed pivot',           'bull',  2.0,  2.0, '美联储转向'],
+  ['rate cut',            'bull',  2.0,  2.0, '降息'],
+  ['interest rate cut',   'bull',  2.0,  2.0, '降息'],
+  ['dovish',              'bull',  1.5,  1.5, '鸽派'],
+  ['quantitative easing', 'bull',  1.5,  1.5, 'QE宽松'],
+  ['stimulus',            'bull',  1.2,  1.2, '刺激政策'],
+  ['weak dollar',         'bull',  1.2,  1.2, '弱美元'],
+  ['dollar weakness',     'bull',  1.2,  1.2, '弱美元'],
+  ['soft landing',        'bull',  1.0,  1.0, '软着陆'],
+  ['institutional buy',   'bull',  2.0,  1.5, '机构买入'],
+  ['blackrock',           'bull',  1.5,  0.8, 'BlackRock'],
+  ['fidelity',            'bull',  1.2,  0.6, 'Fidelity'],
+  ['microstrategy',       'bull',  1.5,  0.5, 'MicroStrategy'],
+  ['record high',         'bull',  1.5,  1.5, '历史新高'],
+  ['all-time high',       'bull',  1.5,  1.5, '历史新高'],
+  ['rally',               'bull',  1.0,  1.0, '上涨行情'],
+  ['surge',               'bull',  1.0,  1.0, '激增'],
+  ['adoption',            'bull',  1.0,  1.0, '采用率提升'],
+  // ── BTC 专项利多 ──
+  ['halving',             'bull',  2.5,  0.4, 'BTC减半'],
+  ['bitcoin halving',     'bull',  2.5,  0.4, 'BTC减半'],
+  ['lightning network',   'bull',  1.0,  0.0, '闪电网络'],
+  ['mining difficulty',   'bull',  0.8,  0.0, '算力增加'],
+  // ── ETH 专项利多 ──
+  ['ethereum upgrade',    'bull',  0.4,  2.5, 'ETH升级'],
+  ['eth upgrade',         'bull',  0.4,  2.5, 'ETH升级'],
+  ['pectra',              'bull',  0.3,  2.5, 'Pectra升级'],
+  ['staking yield',       'bull',  0.3,  1.5, '质押收益'],
+  ['eth staking',         'bull',  0.3,  1.5, 'ETH质押'],
+  ['layer 2',             'bull',  0.3,  1.2, 'L2扩展'],
+  ['rollup',              'bull',  0.2,  1.0, 'Rollup'],
+  ['defi tvl',            'bull',  0.2,  1.2, 'DeFi TVL'],
+  ['eth burn',            'bull',  0.0,  1.5, 'ETH销毁'],
+  // ── 强烈利空 BTC+ETH ──
+  ['exchange collapse',   'bear', -3.0, -3.0, '交易所崩溃'],
+  ['exchange hack',       'bear', -2.5, -2.5, '交易所被黑'],
+  ['exchange down',       'bear', -1.8, -1.8, '交易所宕机'],
+  ['ban bitcoin',         'bear', -3.0, -2.0, 'BTC禁令'],
+  ['crypto ban',          'bear', -2.5, -2.5, '加密禁令'],
+  ['banned',              'bear', -2.0, -2.0, '禁止'],
+  ['hack',                'bear', -1.8, -1.8, '被黑客攻击'],
+  ['hacked',              'bear', -1.8, -1.8, '被黑客攻击'],
+  ['exploit',             'bear', -1.5, -1.5, '漏洞利用'],
+  ['fraud',               'bear', -2.0, -2.0, '欺诈'],
+  ['scam',                'bear', -1.5, -1.5, '诈骗'],
+  ['sec lawsuit',         'bear', -2.0, -2.0, 'SEC诉讼'],
+  ['sec charges',         'bear', -2.0, -2.0, 'SEC指控'],
+  ['crackdown',           'bear', -2.0, -2.0, '监管打压'],
+  ['crash',               'bear', -2.0, -2.0, '崩盘'],
+  ['collapse',            'bear', -2.5, -2.5, '崩溃'],
+  ['liquidation',         'bear', -1.5, -1.5, '大规模爆仓'],
+  ['rate hike',           'bear', -1.8, -1.8, '加息'],
+  ['interest rate hike',  'bear', -1.8, -1.8, '加息'],
+  ['hawkish',             'bear', -1.5, -1.5, '鹰派'],
+  ['recession',           'bear', -2.0, -2.0, '经济衰退'],
+  ['inflation surges',    'bear', -1.5, -1.5, '通胀飙升'],
+  ['banking crisis',      'bear', -2.0, -2.0, '银行危机'],
+  ['default',             'bear', -2.0, -2.0, '债务违约'],
+  ['sanctions',           'bear', -1.5, -1.5, '制裁'],
+  ['tariff',              'bear', -1.2, -1.2, '关税'],
+  ['trade war',           'bear', -1.5, -1.5, '贸易战'],
+  ['sell-off',            'bear', -1.5, -1.5, '市场抛售'],
+  ['selloff',             'bear', -1.5, -1.5, '市场抛售'],
+  ['war',                 'bear', -1.2, -1.2, '战争'],
+  ['conflict',            'bear', -0.8, -0.8, '地缘冲突'],
+  // ── BTC 专项利空 ──
+  ['mining ban',          'bear', -2.5, -0.4, '挖矿禁令'],
+  ['miner capitulation',  'bear', -2.0, -0.3, '矿工投降'],
+  ['miner sell',          'bear', -1.5, -0.3, '矿工抛售'],
+  // ── ETH 专项利空 ──
+  ['defi hack',           'bear', -0.4, -2.5, 'DeFi被黑'],
+  ['bridge hack',         'bear', -0.4, -2.0, '跨链桥被黑'],
+  ['protocol exploit',    'bear', -0.3, -2.0, '协议漏洞'],
+  ['smart contract bug',  'bear', -0.3, -1.8, '合约漏洞'],
+];
+
+function scoreArticleImpact(title) {
+  const t = (title || '').toLowerCase();
+  let btcPts = 0, ethPts = 0;
+  const bullHits = [], bearHits = [];
+  for (const [kw, dir, bp, ep, label] of IMPACT_RULES) {
+    if (t.includes(kw)) {
+      btcPts += bp; ethPts += ep;
+      if (dir === 'bull' && !bullHits.includes(label)) bullHits.push(label);
+      if (dir === 'bear' && !bearHits.includes(label)) bearHits.push(label);
+    }
+  }
+  btcPts = parseFloat(Math.max(-3, Math.min(3, btcPts)).toFixed(1));
+  ethPts = parseFloat(Math.max(-3, Math.min(3, ethPts)).toFixed(1));
+  const maxAbs = Math.max(Math.abs(btcPts), Math.abs(ethPts));
+  const mag = maxAbs >= 2.0 ? 'high' : maxAbs >= 1.0 ? 'medium' : maxAbs >= 0.3 ? 'low' : 'none';
+  const totalDir = btcPts + ethPts;
+  const dir = totalDir > 0.1 ? 'bull' : totalDir < -0.1 ? 'bear' : 'neut';
+  return { btcPts, ethPts, dir, mag, bullHits: bullHits.slice(0,3), bearHits: bearHits.slice(0,3) };
+}
+
+function renderImpactBadge(impact) {
+  if (impact.mag === 'none') return '';
+  const { dir, mag, btcPts, ethPts, bullHits, bearHits } = impact;
+  const magZH  = { high:'影响高', medium:'影响中', low:'影响低' }[mag];
+  const dirZH  = dir === 'bull' ? '↑ 利多' : dir === 'bear' ? '↓ 利空' : '→ 中性';
+  const hits   = (dir === 'bull' ? bullHits : bearHits).join(' · ');
+  const assets = [];
+  if (Math.abs(btcPts) >= 0.3) assets.push(`BTC ${btcPts > 0 ? '+' : ''}${btcPts}`);
+  if (Math.abs(ethPts) >= 0.3) assets.push(`ETH ${ethPts > 0 ? '+' : ''}${ethPts}`);
+  return `<div class="ni-impact-row">
+    <div class="ni-mag-dot ${mag}"></div>
+    <span class="ni-impact-badge ${dir}">${dirZH} · ${magZH}</span>
+    ${assets.map(a => `<span class="ni-asset-score">${a}</span>`).join('')}
+    ${hits ? `<span class="ni-impact-reason">${esc(hits)}</span>` : ''}
+  </div>`;
+}
+
+/* ─────────── 新闻影响分析（信号面板 widget 用） ─────────── */
 // 关键词权重表（正=利多，负=利空）
 const NEWS_KW = {
   // ── 加密利多 ──
@@ -2601,25 +2754,21 @@ const NEWS_KW = {
 };
 
 function analyzeNewsImpact(cryptoArticles, macroArticles) {
-  const allTitles = [...(cryptoArticles||[]), ...(macroArticles||[])]
-    .map(a => (a.title || '').toLowerCase());
-  if (!allTitles.length) return null;
+  const allArticles = [...(cryptoArticles||[]), ...(macroArticles||[])];
+  if (!allArticles.length) return null;
 
-  let score = 0;
+  // 复用逐条评分引擎，汇总 BTC+ETH 综合分
+  let totalScore = 0;
   const bullHits = [], bearHits = [];
-
-  allTitles.forEach(t => {
-    for (const [kw, w] of Object.entries(NEWS_KW)) {
-      if (t.includes(kw)) {
-        score += w;
-        if (w > 0 && !bullHits.includes(kw)) bullHits.push(kw);
-        if (w < 0 && !bearHits.includes(kw)) bearHits.push(kw);
-      }
-    }
+  allArticles.forEach(a => {
+    const imp = scoreArticleImpact(a.title);
+    totalScore += (imp.btcPts + imp.ethPts) / 2;
+    imp.bullHits.forEach(h => { if (!bullHits.includes(h)) bullHits.push(h); });
+    imp.bearHits.forEach(h => { if (!bearHits.includes(h)) bearHits.push(h); });
   });
 
   // 归一化到 -3 ~ +3
-  score = Math.max(-3, Math.min(3, score));
+  const score = parseFloat(Math.max(-3, Math.min(3, totalScore / Math.max(allArticles.length, 1) * 3)).toFixed(2));
 
   let label, cls;
   if      (score >  1.5) { label = '利多'; cls = 'bullish'; }
@@ -2628,7 +2777,7 @@ function analyzeNewsImpact(cryptoArticles, macroArticles) {
   else if (score < -0.4) { label = '偏空'; cls = 'sl-bear'; }
   else                   { label = '中性'; cls = 'neutral'; }
 
-  return { score: parseFloat(score.toFixed(2)), label, cls, bullHits: bullHits.slice(0,6), bearHits: bearHits.slice(0,6) };
+  return { score, label, cls, bullHits: bullHits.slice(0,6), bearHits: bearHits.slice(0,6) };
 }
 
 function updateNewsImpactWidget(impact) {
